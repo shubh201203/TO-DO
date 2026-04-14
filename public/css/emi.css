@@ -1,0 +1,251 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.calculator-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    max-width: 850px;
+    width: 100%;
+}
+
+.calculator-header {
+    background: linear-gradient(90deg, #d34539 0%, #b32a1e 100%);
+    padding: 15px 20px;
+    color: white;
+    text-align: center;
+}
+
+.calculator-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.calculator-body {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 30px;
+    gap: 40px;
+}
+
+.calc-section {
+    flex: 1;
+    min-width: 300px;
+}
+
+.formula-section {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.form-group {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    color: #4a5568;
+    margin-right: 15px;
+    text-align: right;
+    width: 130px;
+}
+
+.form-group input[type="number"], .form-group select {
+    padding: 10px 12px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 1rem;
+    width: 200px;
+    transition: all 0.3s ease;
+    background: #fff;
+    color: #2d3748;
+}
+
+.form-group input[type="number"]:focus, .form-group select:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+}
+
+.input-with-select {
+    display: flex;
+    width: 200px;
+}
+
+.input-with-select input {
+    width: 60% !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.input-with-select select {
+    width: 40% !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-left: none;
+    background: #edf2f7;
+    cursor: pointer;
+}
+
+.buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 20px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+    font-family: inherit;
+}
+
+.btn.primary {
+    background-color: #4299e1;
+    color: white;
+    box-shadow: 0 4px 6px rgba(66, 153, 225, 0.2);
+}
+
+.btn.primary:hover {
+    background-color: #3182ce;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px rgba(66, 153, 225, 0.3);
+}
+
+.btn.secondary {
+    background-color: #edf2f7;
+    color: #4a5568;
+    border: 1px solid #cbd5e0;
+}
+
+.btn.secondary:hover {
+    background-color: #e2e8f0;
+}
+
+.result-area {
+    margin-top: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.95rem;
+    color: #4a5568;
+}
+
+.result-highlight {
+    background-color: #e6fffa;
+    color: #234e52;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    border: 1px solid #b2f5ea;
+    width: 100%;
+    text-align: center;
+}
+
+/* Formula Styling */
+.formula {
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem;
+    font-style: italic;
+    font-family: 'Times New Roman', serif;
+    color: #2b6cb0;
+    margin-bottom: 30px;
+    justify-content: center;
+}
+
+.math-term {
+    margin-right: 10px;
+}
+
+.fraction {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.numerator {
+    border-bottom: 2px solid #2b6cb0;
+    padding: 0 10px 5px;
+}
+
+.denominator {
+    padding: 5px 10px 0;
+}
+
+.formula-legend hp {
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 10px;
+}
+
+.formula-legend ul {
+    list-style: none;
+}
+
+.formula-legend li {
+    color: #718096;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+}
+
+.formula-legend li strong {
+    color: #2d3748;
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 1.2rem;
+    width: 30px;
+}
+
+.back-link {
+    display: block;
+    text-align: center;
+    padding: 15px;
+    background: #edf2f7;
+    color: #4a5568;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s;
+    border-top: 1px solid #e2e8f0;
+}
+
+.back-link:hover {
+    background: #e2e8f0;
+}

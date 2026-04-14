@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WT Lab Assignment 12</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .hub-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 600px; width: 100%; }
+        h1 { color: #1a365d; text-align: center; margin-top: 0; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #4a5568; margin-bottom: 30px; }
+        .app-grid { display: flex; flex-direction: column; gap: 15px; }
+        .app-card { display: flex; align-items: center; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: inherit; transition: all 0.3s ease; }
+        .app-card:hover { transform: translateY(-3px); box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-color: #cbd5e0; }
+        .app-card.q1 { border-left: 5px solid #3182ce; }
+        .app-card.q2 { border-left: 5px solid #e53e3e; }
+        .app-card.q3 { border-left: 5px solid #805ad5; }
+        .app-card.q4 { border-left: 5px solid #38a169; }
+        .card-number { font-size: 1.5rem; font-weight: bold; margin-right: 20px; opacity: 0.5; }
+        .card-content h3 { margin: 0 0 5px 0; font-size: 1.1rem; }
+        .card-content p { margin: 0; color: #718096; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="hub-container">
+        <h1>WT Lab Assignment 12</h1>
+        <p class="subtitle">Dynamic Web Applications built with Node.js</p>
+
+        <div class="app-grid">
+            <a href="/q1" class="app-card q1" title="Read Q1 Case Study.">
+                <span class="card-number">Q1</span>
+                <div class="card-content">
+                    <h3>Deploying React</h3>
+                    <p>Case study and theory regarding React deployment strategies.</p>
+                </div>
+            </a>
+
+            <a href="/emi" class="app-card q2">
+                <span class="card-number">Q2</span>
+                <div class="card-content">
+                    <h3>EMI Calculator</h3>
+                    <p>Financial tool to calculate monthly EMI installments dynamically.</p>
+                </div>
+            </a>
+
+            <a href="/todo" class="app-card q3">
+                <span class="card-number">Q3</span>
+                <div class="card-content">
+                    <h3>Todo Application</h3>
+                    <p>Manage daily tasks with premium dark-mode styling and GitHub deployment guide.</p>
+                </div>
+            </a>
+
+            <a href="/hotel" class="app-card q4">
+                <span class="card-number">Q4</span>
+                <div class="card-content">
+                    <h3>Hotel Bill Screen</h3>
+                    <p>Interactive table for restaurant billing with automated GST calculation.</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

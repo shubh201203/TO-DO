@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q1 Case Study - Deploying React</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        h1 { color: #2d3748; margin-top: 0; text-align: center; border-bottom: 2px solid #edf2f7; padding-bottom: 20px; }
+        h2 { color: #4a5568; margin-top: 30px; }
+        h3 { color: #3182ce; }
+        p { color: #4a5568; }
+        ul { color: #4a5568; }
+        li { margin-bottom: 10px; }
+        strong { color: #2d3748; }
+        pre { 
+            background: #2d3748; 
+            color: #e2e8f0; 
+            padding: 15px; 
+            border-radius: 8px; 
+            overflow-x: auto;
+        }
+        code { font-family: monospace; }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 10px 20px;
+            background: #edf2f7;
+            color: #4a5568;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .back-link:hover { background: #e2e8f0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Deploying React - Case Studies for Building Dynamic Web Applications</h1>
+        
+        <h2>Problem Statement</h2>
+        <p>The goal is to understand how modern dynamic web applications, specifically React applications, are deployed to production environments. We'll examine case studies and common methods to host and deploy React effectively.</p>
+        
+        <h2>Explanation</h2>
+        <p>React is a frontend library used for building user interfaces. Because React applications run in the browser, they are generally compiled into static assets (HTML, CSS, and JavaScript files) using a builder like Webpack or Vite. Once compiled, these static files can be served by virtually any web server setup.</p>
+        
+        <h2>Common Deployment Strategies (Case Studies)</h2>
+        
+        <h3>1. Vercel / Netlify (Modern Serverless Hosting)</h3>
+        <p>Platforms like Vercel (creators of Next.js) and Netlify offer seamless deployment options directly out of GitHub.</p>
+        <ul>
+            <li><strong>How it works:</strong> You connect your Git repository. Every time you push to the <code>main</code> branch, the platform automatically runs <code>npm run build</code> and serves the resulting <code>dist</code> or <code>build</code> folder.</li>
+            <li><strong>Why use it:</strong> Extremely fast, global CDN, and automated CI/CD out-of-the-box. Perfect for dynamic Single Page Applications (SPAs).</li>
+        </ul>
+        
+        <h3>2. GitHub Pages (Static Hosting)</h3>
+        <p>GitHub Pages is a cost-effective (free) method for hosting simple React applications.</p>
+        <ul>
+            <li><strong>How it works:</strong> You install the <code>gh-pages</code> npm package. You add a <code>predeploy</code> (which builds the app) and <code>deploy</code> scripts in your <code>package.json</code>. Running <code>npm run deploy</code> pushes the built payload to a <code>gh-pages</code> branch, which GitHub then serves live.</li>
+            <li><strong>Why use it:</strong> Great for portfolios, small projects, and laboratory assignments since it requires zero server setup.</li>
+        </ul>
+        
+        <h3>3. Traditional VPS / Cloud Instances (AWS EC2, DigitalOcean)</h3>
+        <p>In this case study, a company with custom backend needs deploys a full-stack solution directly on a server.</p>
+        <ul>
+            <li><strong>How it works:</strong> An Ubuntu machine is spun up. Nginx or Apache is installed. Nginx is configured to serve the React built folder (<code>/var/www/html/react-app/build</code>). Node.js and PM2 can be used concurrently to serve an accompanying Express/FastAPI backend on a different port.</li>
+            <li><strong>Why use it:</strong> Maximum configurability, complete control over the networking stack, and security.</li>
+        </ul>
+        
+        <h2>Deploying a React App (Overview for GitHub Pages)</h2>
+        <pre><code># 1. Update package.json with the 'homepage' URL
+"homepage": "https://&lt;github-username&gt;.github.io/&lt;repo-name&gt;",
+
+# 2. Install gh-pages
+npm install gh-pages --save-dev
+
+# 3. Add deploy scripts
+"scripts": {
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d build"
+}
+
+# 4. Deploy!
+npm run deploy</code></pre>
+        
+        <p><em>These methodologies assure your dynamic web application is highly available, performant globally through CDNs, and seamlessly updated upon developers pushing new code.</em></p>
+        
+        <a href="/" class="back-link">&larr; Back to Navigation</a>
+    </div>
+</body>
+</html>

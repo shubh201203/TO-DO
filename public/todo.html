@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node.js Todo App</title>
+    <link rel="stylesheet" href="/css/todo.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>My Todo List</h1>
+            <p>Stay organized and focused</p>
+        </header>
+
+        <form id="todo-form">
+            <input type="text" id="todo-input" placeholder="What needs to be done?" required autocomplete="off">
+            <button type="submit" class="add-btn">Add Task</button>
+        </form>
+
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="pending">Pending</button>
+            <button class="filter-btn" data-filter="completed">Completed</button>
+        </div>
+
+        <ul id="todo-list" class="todo-list">
+            <!-- Items injected by JS -->
+        </ul>
+
+        <div class="footer">
+            <span id="task-count">0 items left</span>
+            <button id="clear-completed">Clear completed</button>
+        </div>
+        <a href="/" class="back-link">&larr; Back to Navigation</a>
+    </div>
+
+    <!-- Deployment instructions modal snippet -->
+    <div class="deploy-info">
+        <h3>GitHub Deployment Instructions</h3>
+        <p>This Node.js Todo App is ready for deployment. Follow these steps:</p>
+        <ol>
+            <li>Run <code>git init</code> in your project directory.</li>
+            <li>Run <code>git add .</code> and <code>git commit -m "Initial commit"</code>.</li>
+            <li>Create a new repository on GitHub.</li>
+            <li>Link local repo to GitHub using <code>git remote add origin &lt;URL&gt;</code>.</li>
+            <li>Push the code using <code>git push -u origin main</code>.</li>
+        </ol>
+    </div>
+
+    <script src="/js/todo.js"></script>
+</body>
+</html>

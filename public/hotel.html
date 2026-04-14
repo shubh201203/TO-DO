@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Bill Screen</title>
+    <link rel="stylesheet" href="/css/hotel.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bill-container">
+        <div class="brand">
+            <h1>GREEN STAR HOTEL</h1>
+            <h2>Customer Bill</h2>
+        </div>
+        
+        <div class="date-section">
+            <span class="label">Date:</span>
+            <span id="current-date" class="date-value"></span>
+        </div>
+        
+        <div class="controls">
+            <form id="item-form" class="item-form">
+                <div class="input-group">
+                    <label for="item-select">Items:</label>
+                    <div class="custom-select">
+                        <select id="item-select" required>
+                            <option value="" disabled selected>Select an item</option>
+                            <option value="Biryani" data-price="140">Biryani (Rs. 140)</option>
+                            <option value="Fried Rice" data-price="110">Fried Rice (Rs. 110)</option>
+                            <option value="Chicken Curry" data-price="230">Chicken Curry (Rs. 230)</option>
+                            <option value="Paneer Tikka" data-price="180">Paneer Tikka (Rs. 180)</option>
+                            <option value="Naan" data-price="35">Naan (Rs. 35)</option>
+                            <option value="Cold Drink" data-price="40">Cold Drink (Rs. 40)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="item-qty">No of Items:</label>
+                    <input type="number" id="item-qty" min="1" value="1" required>
+                </div>
+                
+                <button type="submit" class="add-btn">Add Item &rarr;</button>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <table id="bill-table">
+                <thead>
+                    <tr>
+                        <th width="10%">No.</th>
+                        <th width="35%">Item Name</th>
+                        <th width="15%">Qty</th>
+                        <th width="20%">Price</th>
+                        <th width="20%">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="bill-body">
+                    <!-- Dynamic Rows -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="summary-section">
+            <div class="summary-row">
+                <span class="summary-label">Total</span>
+                <span class="summary-value" id="subtotal">Rs. 0.00</span>
+            </div>
+            <div class="summary-row gst-row">
+                <span class="summary-label">GST @5%</span>
+                <span class="summary-value" id="gst-amount">Rs. 0.00</span>
+            </div>
+            <div class="summary-row grand-total-row">
+                <span class="summary-label">Bill to be paid</span>
+                <span class="summary-value" id="grand-total">Rs. 0.00</span>
+            </div>
+        </div>
+
+        <a href="/" class="back-link">&larr; Back to Navigation</a>
+    </div>
+
+    <script src="/js/hotel.js"></script>
+</body>
+</html>

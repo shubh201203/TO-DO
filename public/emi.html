@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMI Loan Calculator</title>
+    <link rel="stylesheet" href="/css/emi.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="calculator-container">
+        <header class="calculator-header">
+            <h2>EMI Loan Calculator</h2>
+        </header>
+
+        <main class="calculator-body">
+            <div class="calc-section">
+                <form id="emi-form">
+                    <div class="form-group">
+                        <label for="principal">Loan Amount: $</label>
+                        <input type="number" id="principal" value="16500.00" step="0.01" required>
+                    </div>
+
+                    <div class="form-group inline-group">
+                        <label for="months">Loan Tenure:</label>
+                        <div class="input-with-select">
+                            <input type="number" id="months" value="36" required>
+                            <select id="tenure-type">
+                                <option value="months">months</option>
+                                <option value="years">years</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rate">Interest Rate: %</label>
+                        <input type="number" id="rate" value="5.1250" step="0.0001" required>
+                    </div>
+
+                    <div class="form-group inline-group">
+                        <label for="type">Type:</label>
+                        <select class="type-select" id="type">
+                            <option value="arrears">in Arrears</option>
+                            <option value="advance">in Advance</option>
+                        </select>
+                    </div>
+
+                    <div class="buttons">
+                        <button type="button" id="clear-btn" class="btn secondary">Clear</button>
+                        <button type="submit" id="calc-btn" class="btn primary">Calculate</button>
+                    </div>
+                </form>
+
+                <div class="result-area">
+                    <span>Answer:</span>
+                    <div id="result-text" class="result-highlight">Monthly Payment: $495.45</div>
+                </div>
+            </div>
+
+            <div class="formula-section">
+                <!-- Using MathML or an Image for formula - we'll use styled text to recreate -->
+                <div class="formula" aria-label="EMI Formula">
+                    <span class="math-term">E = P &times; r &times; </span>
+                    <span class="fraction">
+                        <span class="numerator">(1 + r)<sup>n</sup></span>
+                        <span class="denominator">(1 + r)<sup>n</sup> &minus; 1</span>
+                    </span>
+                </div>
+                
+                <div class="formula-legend">
+                    <p>Where,</p>
+                    <ul>
+                        <li><strong>E</strong> is the EMI</li>
+                        <li><strong>P</strong> is the principal amount</li>
+                        <li><strong>r</strong> is the monthly rate of interest</li>
+                        <li><strong>n</strong> is the number of months</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+        <a href="/" class="back-link">&larr; Back to Navigation</a>
+    </div>
+
+    <script src="/js/emi.js"></script>
+</body>
+</html>
