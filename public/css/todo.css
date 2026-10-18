@@ -151,6 +151,11 @@ header p {
     transition: all 0.2s;
 }
 
+.checkbox:focus-visible {
+    outline: 2px solid #03dac6;
+    outline-offset: 2px;
+}
+
 .todo-item.completed .checkbox {
     background: #03dac6;
     border-color: #03dac6;
@@ -180,8 +185,11 @@ header p {
     transition: opacity 0.2s;
 }
 
-.todo-item:hover .delete-btn {
+.todo-item:hover .delete-btn,
+.delete-btn:focus-visible {
     opacity: 1;
+    outline: 2px solid #cf6679;
+    outline-offset: 2px;
 }
 
 .footer {

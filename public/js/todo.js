@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearCompletedBtn = document.getElementById('clear-completed');
     const filterBtns = document.querySelectorAll('.filter-btn');
 
-    let todos = JSON.parse(localStorage.getItem('todos')) || [];
+    let todos = loadTodos();
     let currentFilter = 'all';
 
     // Initial render
@@ -31,10 +31,30 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             filterBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            currentFilter = btn.dataset.filter;
+            currentFilter = btn.dataset.filter || 'all';
             renderTodos();
         });
     });
+
+    function loadTodos() {
+        try {
+            const raw = localStorage.getItem('todos');
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [];
+            return parsed
+                .filter(item => item && typeof item === 'object')
+                .map(item => ({
+                    id: String(item.id || Date.now() + Math.random().toString(36).substring(2, 7)),
+                    text: typeof item.text === 'string' ? item.text : String(item.text || ''),
+                    completed: Boolean(item.completed)
+                }))
+                .filter(item => item.text.trim().length > 0);
+        } catch (err) {
+            console.error('Error reading todos from localStorage:', err);
+            return [];
+        }
+    }
 
     function addTodo(text) {
         const todo = {
@@ -62,7 +82,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveTodos() {
-        localStorage.setItem('todos', JSON.stringify(todos));
+        try {
+            localStorage.setItem('todos', JSON.stringify(todos));
+        } catch (err) {
+            console.error('Failed to save todos to localStorage:', err);
+        }
     }
 
     function renderTodos() {
@@ -79,22 +103,37 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
             
-            li.innerHTML = `
-                <div class="checkbox" data-id="${todo.id}"></div>
-                <span class="task-text">${todo.text}</span>
-                <button class="delete-btn" data-id="${todo.id}">&times;</button>
-            `;
+            const checkbox = document.createElement('div');
+            checkbox.className = 'checkbox';
+            checkbox.dataset.id = todo.id;
+            checkbox.setAttribute('role', 'checkbox');
+            checkbox.setAttribute('aria-checked', todo.completed ? 'true' : 'false');
+            checkbox.setAttribute('tabindex', '0');
+            checkbox.setAttribute('aria-label', `Mark task "${todo.text}" as ${todo.completed ? 'pending' : 'completed'}`);
+            checkbox.addEventListener('click', () => toggleTodo(todo.id));
+            checkbox.addEventListener('keydown', (e) => {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    toggleTodo(todo.id);
+                }
+            });
+
+            const taskText = document.createElement('span');
+            taskText.className = 'task-text';
+            taskText.textContent = todo.text; // Safe: textContent ensures plain text rendering, zero XSS execution
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.dataset.id = todo.id;
+            deleteBtn.textContent = '×';
+            deleteBtn.setAttribute('aria-label', `Delete task "${todo.text}"`);
+            deleteBtn.addEventListener('click', () => deleteTodo(todo.id));
+
+            li.appendChild(checkbox);
+            li.appendChild(taskText);
+            li.appendChild(deleteBtn);
             
             list.appendChild(li);
-        });
-
-        // Add event listeners to generated elements
-        document.querySelectorAll('.checkbox').forEach(box => {
-            box.addEventListener('click', (e) => toggleTodo(e.target.dataset.id));
-        });
-        
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => deleteTodo(e.target.dataset.id));
         });
 
         updateFooter();

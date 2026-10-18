@@ -1,13 +1,20 @@
 {
-  "name": "wt_lab_12",
+  "name": "todo-task-manager",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Task management application and web utility hub built with Node.js and Express.",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "test": "node --test"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "todo",
+    "task-manager",
+    "express",
+    "nodejs",
+    "vanilla-js"
+  ],
+  "author": "shubh201203",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
