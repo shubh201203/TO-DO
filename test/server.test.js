@@ -36,10 +36,11 @@ test('Server route verification and error handling', async (t) => {
         });
     }
 
-    await t.test('GET / serves Hub page with status 200', async () => {
+    await t.test('GET / serves Todo App directly as default homepage with status 200', async () => {
         const res = await request('/');
         assert.equal(res.statusCode, 200);
-        assert.match(res.body, /<title>WT Lab Assignment 12<\/title>/);
+        assert.match(res.body, /<title>Full-Stack Task Manager<\/title>/);
+        assert.match(res.body, /id="todo-form"/);
     });
 
     await t.test('GET /todo serves Todo App with status 200', async () => {
@@ -47,6 +48,12 @@ test('Server route verification and error handling', async (t) => {
         assert.equal(res.statusCode, 200);
         assert.match(res.body, /<title>Full-Stack Task Manager<\/title>/);
         assert.match(res.body, /id="todo-form"/);
+    });
+
+    await t.test('GET /hub serves preserved Hub page with status 200', async () => {
+        const res = await request('/hub');
+        assert.equal(res.statusCode, 200);
+        assert.match(res.body, /<title>WT Lab Assignment 12<\/title>/);
     });
 
     await t.test('GET /q1 serves Q1 Case Study with status 200', async () => {

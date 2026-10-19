@@ -48,13 +48,6 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Mount Todo REST API router
-const todosRouter = require('./routes/todos');
-app.use('/api/todos', todosRouter);
-
 // Helper to safely send html files with error handling
 function servePage(res, next, filename) {
     const filePath = path.join(__dirname, 'public', filename);
@@ -65,29 +58,38 @@ function servePage(res, next, filename) {
     });
 }
 
-// Root route to serve the Hub page
+// Default homepage: Serve the To-do application directly on / and /todo
 app.get('/', (req, res, next) => {
-    servePage(res, next, 'index.html');
+    servePage(res, next, 'todo.html');
 });
 
-// Q1 route
-app.get('/q1', (req, res, next) => {
-    servePage(res, next, 'q1.html');
-});
-
-// Q2 route
-app.get('/emi', (req, res, next) => {
-    servePage(res, next, 'emi.html');
-});
-
-// Q3 route
 app.get('/todo', (req, res, next) => {
     servePage(res, next, 'todo.html');
 });
 
-// Q4 route
+// Serve static files from the 'public' directory (with index: false to prevent serving index.html on /)
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
+
+// Mount Todo REST API router
+const todosRouter = require('./routes/todos');
+app.use('/api/todos', todosRouter);
+
+// Preserved utility assignment routes
+app.get('/q1', (req, res, next) => {
+    servePage(res, next, 'q1.html');
+});
+
+app.get('/emi', (req, res, next) => {
+    servePage(res, next, 'emi.html');
+});
+
 app.get('/hotel', (req, res, next) => {
     servePage(res, next, 'hotel.html');
+});
+
+// Legacy assignment hub accessible at /hub
+app.get('/hub', (req, res, next) => {
+    servePage(res, next, 'index.html');
 });
 
 // 404 handler for unmatched routes

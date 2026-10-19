@@ -10,11 +10,11 @@ Designed for production deployment on **Render** with persistent disk volume sto
 
 This project provides a persistent task manager alongside utility web tools, engineered with clear separation of concerns between client, REST API layer, and an embedded SQLite database:
 
-- **Task Manager (`/todo`):** Production-ready full-stack task workspace featuring persistent CRUD operations, live KPI summary metrics, debounced search, status and priority filters, due date tracking with overdue flags, and accessible modal editing and delete confirmations.
-- **Navigation Hub (`/`):** Unified portal providing access to all tools.
+- **Task Manager (`/` & `/todo`):** Production-ready full-stack task workspace served as the primary application homepage, featuring persistent CRUD operations, live KPI summary metrics, debounced search, status and priority filters, due date tracking with overdue flags, and accessible modal editing and delete confirmations.
 - **EMI Loan Calculator (`/emi`):** Dynamic monthly loan installment and amortization calculator.
 - **Hotel Bill Screen (`/hotel`):** Receipt generator with itemized selection and automated GST calculation.
 - **Deploying React Case Study (`/q1`):** Technical case study examining deployment strategies for modern dynamic Single-Page Applications.
+- **Legacy Assignment Hub (`/hub`):** Preserved assignment navigation portal.
 
 ---
 
@@ -272,10 +272,10 @@ For complete step-by-step instructions, backup procedures, and troubleshooting, 
    ```
    The application will initialize `data/todos.db` automatically and listen on `http://0.0.0.0:3000` (or the port defined by `process.env.PORT`).
 
-4. **Access the web tools:**
-   - Task Dashboard: `http://localhost:3000/todo`
-   - Navigation Portal: `http://localhost:3000/`
+4. **Access the application:**
+   - Primary Task Dashboard (Homepage): `http://localhost:3000/` or `http://localhost:3000/todo`
    - Health Status: `http://localhost:3000/health`
+   - Preserved Tools: `http://localhost:3000/emi`, `http://localhost:3000/hotel`, `http://localhost:3000/q1`, `http://localhost:3000/hub`
 
 ---
 
@@ -287,10 +287,10 @@ The test suite runs with Node.js built-in `node:test` runner and uses an isolate
 npm test
 ```
 
-### Test Coverage (38 passing automated tests):
+### Test Coverage (39 passing automated tests):
 - **Database Unit Tests (8 tests):** Schema creation, CRUD operations, metadata handling, search/filter queries, overdue count calculations, health check query, and unsupported field rejection.
 - **REST API Integration Tests (11 tests):** Endpoint status codes, body validation, 400 for empty title, 400 for invalid dates/priorities, 400 for malformed JSON, 400 for empty PATCH payload, 400 for non-object bodies, 404 for missing IDs, PATCH updates, and DELETE operations.
-- **Web Hub Route Verification (10 tests):** Confirms `/`, `/todo`, `/q1`, `/emi`, `/hotel`, `/health`, and static asset endpoints return `200 OK`, validates security headers, and verifies clean 404 responses.
+- **Web Hub Route Verification (11 tests):** Confirms `/` and `/todo` serve the To-do app directly, verifies `/q1`, `/emi`, `/hotel`, `/hub`, `/health`, and static asset endpoints return `200 OK`, validates security headers, and verifies clean 404 responses.
 - **Todo Logic & State Verification (5 tests):** Validates sanitization of untrusted payloads, filtering algorithms, completion clearing, overdue date calculation, and ISO date formatting.
 
 ---
