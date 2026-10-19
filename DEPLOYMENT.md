@@ -1,6 +1,6 @@
 # Production Deployment Guide: Render Free Web Service with Persistent PostgreSQL (Neon)
 
-This guide explains how to deploy the **Full-Stack Task Manager & Web Hub** to **Render's Free Web Service** backed by persistent **PostgreSQL** storage (using [Neon](https://neon.tech), Supabase, or any external PostgreSQL provider).
+This guide explains how to deploy the **Full-Stack Task Manager** to **Render's Free Web Service** backed by persistent **PostgreSQL** storage (using [Neon](https://neon.tech), Supabase, or any external PostgreSQL provider).
 
 ---
 
@@ -61,7 +61,7 @@ The application includes an intelligent dual-driver database layer (`db/database
 
 ### Deployment Method A: Blueprint Deployment (Recommended)
 
-This repository includes an updated `render.yaml` Blueprint configured specifically for the Render Free Web Service tier.
+This repository includes a `render.yaml` Blueprint configured specifically for the Render Free Web Service tier.
 
 1. Ensure your latest changes are pushed to GitHub:
    ```bash
@@ -92,7 +92,7 @@ If configuring manually via the Render UI:
 1. In the Render Dashboard, click **New +** &rarr; **Web Service**.
 2. Connect your GitHub repository (`shubh201203/TO-DO`).
 3. Set the configuration:
-   - **Name:** `todo-task-manager`
+   - **Name:** `todo-app-shubh` (or your preferred service name)
    - **Region:** Same region as your Neon database (or closest to it).
    - **Branch:** `main`
    - **Runtime:** `Node`
@@ -120,25 +120,26 @@ Open the **Logs** tab in Render:
   ```text
   Connecting to PostgreSQL database...
   PostgreSQL database connected and schema initialized.
-  Task Manager & Web Hub listening at http://0.0.0.0:10000
+  Task Manager & Web Hub (postgres) listening at http://0.0.0.0:10000
   ```
 
 ### 2. Verify Health Check Endpoint
 Query your deployed service:
 ```bash
-curl https://your-service-name.onrender.com/health
+curl https://todo-app-shubh.onrender.com/health
 ```
 **Expected Response (`200 OK`):**
 ```json
 {
   "status": "ok",
+  "database": "postgres",
   "uptime": 45,
   "timestamp": "2026-10-19T06:00:00.000Z"
 }
 ```
 
 ### 3. Verify PostgreSQL Data Persistence
-1. Open `https://your-service-name.onrender.com/` in your browser.
+1. Open `https://todo-app-shubh.onrender.com/` in your browser.
 2. Create a test task:
    - **Title:** `Neon PostgreSQL Persistence Check`
    - **Priority:** `High`
@@ -157,7 +158,7 @@ curl https://your-service-name.onrender.com/health
 No database setup or credentials are required for local development or testing:
 
 - **Local Machine:**
-  Simply run `npm start`. Since `DATABASE_URL` is omitted, the app instantly boots with SQLite (`data/todos.db`).
+  Simply run `npm start`. Since `DATABASE_URL` is omitted, the app instantly boots with SQLite (`data/todos.db`) on `http://localhost:3000`.
 - **Running Tests:**
   `npm test` executes all 52 automated tests in milliseconds using isolated in-memory SQLite and a mock PostgreSQL adapter. No live network or database credentials are required.
 - **Testing PostgreSQL Locally (Optional):**

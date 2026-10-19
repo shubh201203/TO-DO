@@ -1,4 +1,4 @@
-# Full-Stack Task Manager & Web Hub
+# Full-Stack Task Manager
 
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Express.js](https://img.shields.io/badge/Express-5.2-000000?logo=express&logoColor=white)](https://expressjs.com/)
@@ -9,45 +9,52 @@
 [![Tests](https://img.shields.io/badge/Tests-52%20Passing-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/api/test.html)
 [![License](https://img.shields.io/badge/License-ISC-blue.svg)](package.json)
 
-A production-grade, responsive task management platform and interactive web utility hub engineered with **Node.js**, **Express 5**, a dual-engine persistence layer supporting **PostgreSQL** and **SQLite**, and a modern dark-mode frontend built with vanilla HTML5, CSS3, and JavaScript.
+A production-ready, full-stack Task Management application built with **Node.js**, **Express 5**, an intelligent dual-engine persistence layer (**PostgreSQL** in production and **SQLite** for local development), and a responsive dark-mode frontend crafted with vanilla HTML5, CSS3, and JavaScript.
 
 ---
 
 ## Quick Links
 
+- **Live Application Demo:** [https://todo-app-shubh.onrender.com/](https://todo-app-shubh.onrender.com/) *(Hosted on Render Free Web Service; initial request may require 20–40 seconds if waking from cold sleep)*
 - **GitHub Repository:** [https://github.com/shubh201203/TO-DO](https://github.com/shubh201203/TO-DO)
-- **Live Application Demo:** [https://todo-task-manager-786m.onrender.com](https://todo-task-manager-786m.onrender.com) *(Hosted on Render Free Tier; may take 20–40 seconds to wake on initial load)*
-- **Health Check Endpoint:** [https://todo-task-manager-786m.onrender.com/health](https://todo-task-manager-786m.onrender.com/health)
+- **Health Check Endpoint:** [https://todo-app-shubh.onrender.com/health](https://todo-app-shubh.onrender.com/health)
 - **Deployment Documentation:** [`DEPLOYMENT.md`](./DEPLOYMENT.md)
+
+---
+
+## Application Screenshots
+
+| Main Dashboard & KPI Overview | Active Tasks with Priority Sorting |
+| :---: | :---: |
+| ![Task Manager Dashboard Overview](docs/screenshots/todo-dashboard.png) | ![Task Manager Active Tasks and Filtering](docs/screenshots/todo-dashboard-tasks.png) |
+| *Header branding, live KPI metric counters (Total, In Progress, Completed, Overdue), and task creation interface.* | *Active task list displaying color-coded priority badges (Low, Medium, High), search, and inline actions.* |
 
 ---
 
 ## Table of Contents
 
-- [Overview & Problem Solved](#overview--problem-solved)
-- [Feature Highlights](#feature-highlights)
-- [Screenshots](#screenshots)
-- [Technology Stack](#technology-stack)
-- [System Architecture](#system-architecture)
-- [Database Architecture & Persistence Strategy](#database-architecture--persistence-strategy)
-- [REST API Reference](#rest-api-reference)
-- [Local Setup & Installation](#local-setup--installation)
-- [Environment Variables](#environment-variables)
-- [Automated Testing](#automated-testing)
-- [Production Deployment (Render & Neon)](#production-deployment-render--neon)
-- [Health Monitoring](#health-monitoring)
-- [Security Considerations & Verified Limitations](#security-considerations--verified-limitations)
-- [Project Directory Structure](#project-directory-structure)
-- [Planned Future Enhancements](#planned-future-enhancements)
-- [License](#license)
+1. [Overview & Project Objectives](#1-overview--project-objectives)
+2. [Key Features](#2-key-features)
+3. [Technology Stack](#3-technology-stack)
+4. [System Architecture](#4-system-architecture)
+5. [Database Architecture & Persistence Strategy](#5-database-architecture--persistence-strategy)
+6. [REST API Documentation](#6-rest-api-documentation)
+7. [Local Setup & Installation](#7-local-setup--installation)
+8. [Environment Variables](#8-environment-variables)
+9. [Automated Testing](#9-automated-testing)
+10. [Production Deployment (Render & Neon)](#10-production-deployment-render--neon)
+11. [Security Safeguards & Known Limitations](#11-security-safeguards--known-limitations)
+12. [Project Directory Structure](#12-project-directory-structure)
+13. [Planned Future Improvements](#13-planned-future-improvements)
+14. [License](#14-license)
 
 ---
 
-## Overview & Problem Solved
+## 1. Overview & Project Objectives
 
 Many portfolio task managers face two common architectural limitations:
-1. **Client-only storage (`localStorage`):** Confined to a single browser profile, easily wiped when clearing cache, and inaccessible across devices.
-2. **Ephemeral cloud container storage:** Free hosting providers (such as Render Free Web Services) use ephemeral container filesystems. Embedded file-based databases like SQLite are completely wiped every time the container sleeps, restarts, or redeploys.
+1. **Client-only storage (`localStorage`):** Tied to a single browser profile, easily wiped when clearing site data, and inaccessible across devices.
+2. **Ephemeral cloud container storage:** Free cloud hosting providers (such as Render Free Web Services) use ephemeral container filesystems. Embedded file-based databases like SQLite are completely wiped every time the container sleeps, restarts, or redeploys.
 
 **How This Project Solves It:**
 This application implements an **intelligent dual-engine database architecture**:
@@ -57,57 +64,36 @@ This application implements an **intelligent dual-engine database architecture**
 
 ---
 
-## Feature Highlights
+## 2. Key Features
 
-### Core Task Management (`/` and `/todo`)
-- **Full CRUD Workflow:** Create tasks with titles, descriptions, priorities, and due dates; edit tasks inline via accessible dialogs; toggle completions with instant status updates; delete tasks with safety confirmation.
-- **Real-Time KPI Dashboard:** Live metrics display Total Tasks, In Progress, Completed, and Overdue tasks, recalculated on every database state change.
-- **Debounced Search:** Instant title and description search powered by an input debounce timer to minimize unnecessary requests.
-- **Multi-Criteria Filtering:** Filter by completion status (`all`, `pending`, `completed`) and priority level (`all`, `low`, `medium`, `high`).
-- **Overdue Task Intelligence:** Dynamic calendar comparison flags past-due unfinished tasks with high-visibility badges.
-- **Accessible UI/UX:** Clean, modern dark-mode aesthetic with modal dialogs supporting keyboard traps, `Escape` key dismissal, focus restoration, and ARIA labels.
-
-### Preserved Web Utility Tools
-- **EMI Loan Calculator (`/emi`):** Calculates monthly loan repayments, total payable amounts, and interest breakdowns with dynamic formula validation.
-- **Hotel Bill Generator (`/hotel`):** Generates itemized customer receipts with automated GST computation and print-friendly layouts.
-- **Dynamic SPA Case Study (`/q1`):** In-depth technical case study detailing dynamic Single-Page Application deployment strategies.
-- **Legacy Assignment Portal (`/hub`):** Preserved navigation hub providing direct access to academic lab exercises.
+- **Complete CRUD Operations:** Create tasks with title, description, priority, and due date; view tasks with instant feedback; edit tasks inline via accessible modal dialogs; and delete tasks with confirmation guards.
+- **Real-Time KPI Dashboard:** Live metric counters calculate Total Tasks, In Progress, Completed, and Overdue tasks directly from database queries on every change.
+- **Instant Debounced Search:** Real-time search across task titles and descriptions with an input debounce timer to minimize unnecessary requests.
+- **Multi-Criteria Filtering:** Filter tasks by status (`All`, `Pending`, `Completed`) and priority level (`Low`, `Medium`, `High`).
+- **Priority Sorting & Ordering:** Sort tasks by Priority, Newest First, Due Date, or Title.
+- **Overdue Task Intelligence:** Dynamic calendar comparison flags past-due unfinished tasks with high-visibility overdue badges.
+- **Accessible Modal Dialogs:** Keyboard-friendly modal dialogs supporting focus management, `Escape` key dismissal, and backdrop click closure.
+- **Modern Dark UI:** Clean, Linear-inspired dark interface styled with modern CSS variables, responsive Flexbox/Grid layouts, and Google Font `Outfit`.
 
 ---
 
-## Screenshots
+## 3. Technology Stack
 
-> [!NOTE]
-> Screenshots can be captured and saved in `docs/screenshots/` to display previews directly in this section.
->
-> | Dashboard Overview | Task Editing Modal |
-> | :---: | :---: |
-> | *(Placeholder: Add `docs/screenshots/dashboard.png`)* | *(Placeholder: Add `docs/screenshots/edit-modal.png`)* |
->
-> To add screenshots to this repository:
-> 1. Create a `docs/screenshots/` directory.
-> 2. Capture application screenshots of the dashboard and edit modal.
-> 3. Update the image links above with relative paths: `![Dashboard](docs/screenshots/dashboard.png)`.
-
----
-
-## Technology Stack
-
-| Layer | Technology | Version | Purpose |
-|---|---|---|---|
-| **Runtime** | [Node.js](https://nodejs.org/) | `>= 18.0.0` | Server-side JavaScript execution environment. |
-| **Web Framework** | [Express](https://expressjs.com/) | `^5.2.1` | HTTP routing, REST API endpoints, middleware, and static asset delivery. |
-| **Production Database** | [PostgreSQL (`pg`)](https://node-postgres.com/) | `^8.13.1` | Production connection pooling, parameterized SQL queries, and SSL communication with Neon. |
-| **Development Database** | [SQLite (`better-sqlite3`)](https://github.com/WiseLibs/better-sqlite3) | `^13.0.3` | Zero-configuration local database with Write-Ahead Logging (`WAL` mode). |
-| **Frontend Core** | Vanilla HTML5, CSS3, ES6+ JS | Native | Lightweight, dependency-free client with no heavy framework bundle overhead. |
-| **Styling & Theme** | CSS Custom Properties | Native | Linear/Raycast-inspired dark interface with Google Font `Outfit`. |
-| **Automated Testing** | Node.js Native Test Runner | Native (`node:test`) | Unit and integration test execution with `node:assert/strict`. |
-| **Cloud Hosting** | [Render](https://render.com/) | Free Web Service | Automated Git-triggered deployments via `render.yaml` Blueprint. |
-| **Cloud Database** | [Neon](https://neon.tech/) | Serverless Postgres | Free-tier managed PostgreSQL instance with connection pooling. |
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Runtime** | [Node.js](https://nodejs.org/) (v18+) | Server-side JavaScript runtime engine. |
+| **Web Framework** | [Express](https://expressjs.com/) (v5) | HTTP server routing, REST API endpoints, middleware, and static asset delivery. |
+| **Production Database** | [PostgreSQL (`pg`)](https://node-postgres.com/) | Production connection pooling, parameterized SQL queries, and SSL communication with Neon. |
+| **Development Database** | [SQLite (`better-sqlite3`)](https://github.com/WiseLibs/better-sqlite3) | Fast, zero-dependency local database using Write-Ahead Logging (`WAL` mode). |
+| **Frontend Core** | Vanilla HTML5, CSS3, ES6+ JS | Lightweight, framework-free client eliminating bundle overhead and build steps. |
+| **Styling & Theme** | CSS Custom Properties | Linear/Raycast-inspired dark interface with responsive layouts and Google Font `Outfit`. |
+| **Automated Testing** | Node.js Native Test Runner (`node:test`) | Unit and integration test execution with native assertions (`node:assert/strict`). |
+| **Cloud Hosting** | [Render](https://render.com/) | Free Web Service with automated Git-triggered deployments via `render.yaml`. |
+| **Cloud Database** | [Neon](https://neon.tech/) | Serverless managed PostgreSQL with connection pooling and TLS encryption. |
 
 ---
 
-## System Architecture
+## 4. System Architecture
 
 ```text
                                  [ Web Browser Client ]
@@ -124,10 +110,10 @@ This application implements an **intelligent dual-engine database architecture**
     ┌─────────────────────────────────────┴─────────────────────────────────────┐
     │                                                                           │
     ▼                                                                           ▼
-[ Static Assets & Web Tools ]                                         [ Security Middleware ]
-- Primary Task UI (/ & /todo)                                        - nosniff, SAMEORIGIN, CSP
-- Preserved Tools (/emi, /hotel, /q1)                                - 100kb JSON Body Parser
-- Legacy Hub (/hub)                                                  - Malformed JSON Handler
+[ Static Application UI ]                                             [ Security Middleware ]
+- Dedicated To-Do Dashboard                                          - nosniff, SAMEORIGIN, CSP
+  (Served directly on / & /todo)                                     - 100kb JSON Body Parser
+                                                                     - Malformed JSON Handler
                                                                                 │
                                                                                 ▼
                                                                       [ REST API Router ]
@@ -153,17 +139,17 @@ This application implements an **intelligent dual-engine database architecture**
 
 ---
 
-## Database Architecture & Persistence Strategy
+## 5. Database Architecture & Persistence Strategy
 
 ### Dynamic Storage Selection
-The database layer (`db/database.js`) inspects `process.env.DATABASE_URL` upon initialization:
-- **`DATABASE_URL` Present:** Boots [`db/postgres.js`](db/postgres.js) using `pg.Pool`. Establishes an SSL connection to the remote PostgreSQL cluster and verifies connectivity via `SELECT 1`.
-- **`DATABASE_URL` Absent:** Boots [`db/sqlite.js`](db/sqlite.js) using `better-sqlite3`. Creates the local database file at `data/todos.db` (or `process.env.DATABASE_PATH`) with `WAL` journaling mode enabled.
-- **Fail-Fast Safety:** If `DATABASE_URL` is configured but invalid or unreachable, `initDb()` throws an immediate exception and halts the process. It will **never** silently revert to SQLite in production, preventing deceptive silent data loss.
+The database layer ([`db/database.js`](db/database.js)) inspects `process.env.DATABASE_URL` upon initialization:
+- **`DATABASE_URL` Configured:** Boots [`db/postgres.js`](db/postgres.js) using `pg.Pool`. Connects securely via TLS to the cloud PostgreSQL database and verifies connectivity with `SELECT 1`.
+- **`DATABASE_URL` Omitted:** Boots [`db/sqlite.js`](db/sqlite.js) using `better-sqlite3`. Stores records locally in `data/todos.db` (or `process.env.DATABASE_PATH`) with WAL mode enabled.
+- **Fail-Fast Safety:** If `DATABASE_URL` is set but the database cannot be contacted, the server throws an immediate error and exits. It **never** silently falls back to SQLite, preventing accidental data loss in production.
 
 ### Database Schemas
 
-Both database engines run idempotent initialization scripts on application startup:
+Both database engines run idempotent schema migrations on startup:
 
 #### PostgreSQL Schema (`db/postgres.js`)
 ```sql
@@ -202,23 +188,23 @@ CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(due_date);
 ```
 
 ### Data Normalization
-- **Dates:** Cloud PostgreSQL returns SQL `DATE` columns as JavaScript `Date` instances. The PostgreSQL adapter explicitly formats these values to `YYYY-MM-DD` strings before returning them to the API layer, eliminating timezone-induced calendar day offsets.
+- **Dates:** Cloud PostgreSQL drivers parse SQL `DATE` columns as JavaScript `Date` instances. The PostgreSQL adapter explicitly formats these values to `YYYY-MM-DD` strings before returning them to the API layer, eliminating timezone-induced calendar day offsets.
 - **Booleans:** PostgreSQL uses native `BOOLEAN` types (`true`/`false`), while SQLite uses `INTEGER` flags (`1`/`0`). Both adapters return normalized JavaScript booleans.
 
 ---
 
-## REST API Reference
+## 6. REST API Documentation
 
-All API routes return responses formatted with `application/json; charset=utf-8`.
+All API endpoints return standard JSON responses with `Content-Type: application/json; charset=utf-8`.
 
-| Method | Endpoint | Query / Body Parameters | Description | Status Codes |
+| Method | Endpoint | Query / Body Parameters | Purpose | Status Codes |
 |---|---|---|---|---|
-| `GET` | `/health` | *None* | Verifies application uptime and active database health (`SELECT 1`). | `200`, `503` |
-| `GET` | `/api/todos` | Query: `status` (`all`\|`pending`\|`completed`), `priority` (`low`\|`medium`\|`high`), `search` (string), `sortBy` (`createdAt`\|`dueDate`\|`priority`\|`title`), `sortOrder` (`asc`\|`desc`) | Retrieves task list matching criteria with count. | `200`, `400` |
+| `GET` | `/health` | *None* | Verifies application uptime and active database connectivity (`SELECT 1`). | `200`, `503` |
+| `GET` | `/api/todos` | Query: `status` (`all`\|`pending`\|`completed`), `priority` (`low`\|`medium`\|`high`), `search` (string), `sortBy` (`createdAt`\|`dueDate`\|`priority`\|`title`), `sortOrder` (`asc`\|`desc`) | Retrieves list of tasks matching filters with count. | `200`, `400` |
 | `GET` | `/api/todos/summary` | *None* | Returns dashboard metrics: total, pending, completed, overdue. | `200` |
 | `GET` | `/api/todos/:id` | Route Param: `:id` (positive integer) | Retrieves single task record by ID. | `200`, `400`, `404` |
-| `POST` | `/api/todos` | JSON Body: `title` (required, max 255), `description` (optional, max 1000), `priority` (`low`\|`medium`\|`high`), `dueDate` (ISO date `YYYY-MM-DD`) | Creates new task record. | `201`, `400` |
-| `PATCH` | `/api/todos/:id` | Route Param: `:id`<br>JSON Body (at least one): `title`, `description`, `completed`, `priority`, `dueDate` | Updates fields on an existing task. Discards non-whitelisted properties. | `200`, `400`, `404` |
+| `POST` | `/api/todos` | JSON Body: `title` (required, max 255), `description` (optional, max 1000), `priority` (`low`\|`medium`\|`high`), `dueDate` (ISO date `YYYY-MM-DD`) | Creates a new task record. | `201`, `400` |
+| `PATCH` | `/api/todos/:id` | Route Param: `:id`<br>JSON Body (at least one): `title`, `description`, `completed`, `priority`, `dueDate` | Updates fields of an existing task. Discards non-whitelisted fields. | `200`, `400`, `404` |
 | `DELETE` | `/api/todos/:id` | Route Param: `:id` (positive integer) | Permanently deletes a task record. | `200`, `400`, `404` |
 
 ### Sample API Payloads
@@ -229,8 +215,8 @@ POST /api/todos HTTP/1.1
 Content-Type: application/json
 
 {
-  "title": "Complete portfolio deployment audit",
-  "description": "Verify Render Free Web Service with Neon PostgreSQL",
+  "title": "Deploy service to Render",
+  "description": "Configure Neon PostgreSQL and verify persistence across cold starts",
   "priority": "high",
   "dueDate": "2026-10-31"
 }
@@ -243,8 +229,8 @@ Content-Type: application/json
   "message": "Task created successfully.",
   "data": {
     "id": 1,
-    "title": "Complete portfolio deployment audit",
-    "description": "Verify Render Free Web Service with Neon PostgreSQL",
+    "title": "Deploy service to Render",
+    "description": "Configure Neon PostgreSQL and verify persistence across cold starts",
     "completed": false,
     "priority": "high",
     "dueDate": "2026-10-31",
@@ -259,19 +245,19 @@ Content-Type: application/json
 {
   "success": true,
   "data": {
-    "total": 8,
-    "pending": 5,
-    "completed": 3,
-    "overdue": 1
+    "total": 3,
+    "pending": 3,
+    "completed": 0,
+    "overdue": 0
   }
 }
 ```
 
 ---
 
-## Local Setup & Installation
+## 7. Local Setup & Installation
 
-Follow these steps to run the application on Windows, macOS, or Linux:
+Follow these steps to run the application locally on Windows, macOS, or Linux:
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) version **18.x** or higher
@@ -296,16 +282,12 @@ npm start
 
 The application detects that `DATABASE_URL` is unset and automatically initializes SQLite at `data/todos.db`:
 ```text
-Task Manager & Web Hub (sqlite) listening at http://0.0.0.0:3000
+Task Manager (sqlite) listening at http://0.0.0.0:3000
 ```
 
-### 4. Open in Browser
-- **Task Management Dashboard:** [http://localhost:3000](http://localhost:3000) or [http://localhost:3000/todo](http://localhost:3000/todo)
-- **Health Check Status:** [http://localhost:3000/health](http://localhost:3000/health)
-- **EMI Calculator:** [http://localhost:3000/emi](http://localhost:3000/emi)
-- **Hotel Bill Generator:** [http://localhost:3000/hotel](http://localhost:3000/hotel)
-- **Deployment Case Study:** [http://localhost:3000/q1](http://localhost:3000/q1)
-- **Legacy Hub:** [http://localhost:3000/hub](http://localhost:3000/hub)
+### 4. Access the Application
+- **Task Dashboard:** [http://localhost:3000/](http://localhost:3000/) or [http://localhost:3000/todo](http://localhost:3000/todo)
+- **Health Endpoint:** [http://localhost:3000/health](http://localhost:3000/health)
 
 *(Optional)* To test with a local PostgreSQL instance:
 ```bash
@@ -314,13 +296,13 @@ DATABASE_URL="postgres://user:password@localhost:5432/todos_dev" npm start
 
 ---
 
-## Environment Variables
+## 8. Environment Variables
 
 | Variable | Required | Default Value | Description |
 |---|---|---|---|
-| `PORT` | No | `3000` | Port on which the HTTP server listens. Provided dynamically by Render in production. |
+| `PORT` | No | `3000` | Port on which the HTTP server listens. Injected automatically by Render in production. |
 | `HOST` | No | `0.0.0.0` | Network binding address. |
-| `NODE_ENV` | No | `development` | Set to `production` in deployment to disable debug messages and optimize responses. |
+| `NODE_ENV` | No | `development` | Set to `production` in deployment to disable debug messages and optimize performance. |
 | `DATABASE_URL` | Production | *Unset* | Full PostgreSQL connection URI (e.g. `postgres://user:pass@host/db?sslmode=require`). When set, the server switches to PostgreSQL mode. |
 | `DATABASE_SSL` | No | `true` | When in PostgreSQL mode, enables SSL with `rejectUnauthorized: false` for managed cloud databases. Set to `false` for unencrypted local databases. |
 | `DB_POOL_MAX` | No | `10` | Maximum number of concurrent database client connections in the PostgreSQL pool. |
@@ -331,9 +313,9 @@ DATABASE_URL="postgres://user:password@localhost:5432/todos_dev" npm start
 
 ---
 
-## Automated Testing
+## 9. Automated Testing
 
-The automated test suite runs via Node.js native test runner (`node:test`) and requires no additional testing frameworks or external databases.
+The automated test suite runs using the Node.js native test runner (`node:test`) and requires no external testing frameworks or live databases.
 
 ```bash
 npm test
@@ -377,14 +359,13 @@ npm test
   ✔ Updates task and updates updated_at column
   ✔ Deletes task and reports true/false based on rowCount
   ✔ Calculates dashboard metrics accurately
-  ✔ checkHealth returns true on operational pool
+  ✔ checkHealth reports true on operational pool
   ✔ formatDueDate correctly handles Date instances, strings, and nulls
 
 ▶ Server Route Verification & Error Handling (11 tests)
   ✔ GET / serves Todo App directly as default homepage (200)
   ✔ GET /todo serves Todo App (200)
-  ✔ GET /hub serves preserved Hub page (200)
-  ✔ GET /q1, /emi, /hotel serve respective utility tools (200)
+  ✔ GET /hub, /q1, /emi, /hotel routes respond (200)
   ✔ GET /health returns status 200 and healthy status JSON
   ✔ Server includes security headers in HTTP responses
   ✔ Handles unmatched web routes (404 Page not found)
@@ -406,78 +387,50 @@ npm audit
 
 ---
 
-## Production Deployment (Render & Neon)
+## 10. Production Deployment (Render & Neon)
 
 For complete step-by-step instructions and troubleshooting, consult **[`DEPLOYMENT.md`](./DEPLOYMENT.md)**.
 
 ### Deployment Summary
 1. **Provision Free PostgreSQL on Neon:**
    - Sign up at [neon.tech](https://neon.tech) and create a project.
-   - Copy the connection string (`postgres://...`).
+   - Copy the pooled connection string (`postgres://...`).
 2. **Deploy on Render:**
-   - Log in to [Render Dashboard](https://dashboard.render.com).
+   - Log in to the [Render Dashboard](https://dashboard.render.com).
    - Create a new **Blueprint** and connect this repository (`shubh201203/TO-DO`).
-   - Render detects [`render.yaml`](render.yaml) (configured for the **Free Plan** with zero disk fees).
+   - Render detects [`render.yaml`](render.yaml) configured for the **Free Plan**.
    - Provide your Neon connection string when prompted for `DATABASE_URL`.
    - Click **Apply**. Render builds the service with `npm install` and starts it with `npm start`.
+3. **Verify Deployment:**
+   - Visit [https://todo-app-shubh.onrender.com/](https://todo-app-shubh.onrender.com/) to interact with the live application.
+   - Query [https://todo-app-shubh.onrender.com/health](https://todo-app-shubh.onrender.com/health) to confirm database status.
 
 ---
 
-## Health Monitoring
-
-The application exposes a `/health` endpoint designed for uptime monitors and Render deployment checks:
-
-### Request
-```bash
-curl -i https://todo-task-manager-786m.onrender.com/health
-```
-
-### Healthy Response (`200 OK`)
-```json
-{
-  "status": "ok",
-  "database": "postgres",
-  "uptime": 240,
-  "timestamp": "2026-10-19T06:30:00.000Z"
-}
-```
-
-### Unhealthy Response (`503 Service Unavailable`)
-```json
-{
-  "status": "error",
-  "database": "postgres",
-  "error": "Database check failed"
-}
-```
-
----
-
-## Security Considerations & Verified Limitations
+## 11. Security Safeguards & Known Limitations
 
 ### Implemented Protections
-- **SQL Injection Prevention:** All database queries utilize parameterized statements (`$1, $2, ...` in PostgreSQL; `?` in SQLite). No raw string interpolation is performed.
-- **Cross-Site Scripting (XSS) Mitigation:** User input is rendered to the DOM strictly via `textContent` or sanitized element properties.
-- **Defensive HTTP Headers:** Security middleware applies `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Content-Security-Policy`.
-- **Payload Size Restrictions:** The JSON body parser is restricted to `100kb`. Malformed JSON payloads are trapped gracefully without server crashes.
-- **Mass Assignment Whitelist:** Updating tasks enforces an explicit whitelist (`title`, `description`, `completed`, `priority`, `dueDate`). Internal attributes (`id`, `created_at`, `updated_at`) cannot be overwritten by clients.
-- **Fail-Fast Database Initialization:** If a PostgreSQL connection string is provided, startup will abort if the database cannot be contacted, preventing accidental fallback to ephemeral storage.
+- **SQL Injection Prevention:** All queries use parameterized statements (`$1, $2, ...` in PostgreSQL; `?` in SQLite). No raw string interpolation is executed.
+- **Cross-Site Scripting (XSS) Mitigation:** User input is rendered to the DOM strictly via `textContent` or sanitized DOM node properties.
+- **Defensive HTTP Headers:** Security middleware enforces `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Content-Security-Policy`.
+- **Payload Size Restrictions:** The JSON body parser is capped at `100kb`. Malformed JSON payloads are handled cleanly without crashing the server process.
+- **Mass Assignment Whitelist:** Updating tasks enforces an explicit whitelist (`title`, `description`, `completed`, `priority`, `dueDate`). Internal attributes (`id`, `created_at`, `updated_at`) cannot be modified by clients.
+- **Fail-Fast Database Initialization:** If a PostgreSQL connection string is provided, startup aborts immediately if the database cannot be contacted, preventing accidental fallback to ephemeral storage.
 
-### Verified Limitations (Transparent Disclosure)
+### Known Limitations (Transparent Disclosure)
 - **Public Workspace Model:** No user authentication or user account system is implemented. Any visitor to the public URL can view, create, edit, and delete tasks.
-- **No Rate Limiting:** Request rate limiting (e.g. `express-rate-limit`) is not installed.
+- **No Rate Limiting:** Request rate limiting middleware (e.g. `express-rate-limit`) is not installed.
 - **No Server-Side Pagination:** The `GET /api/todos` endpoint returns all tasks matching the specified filter criteria in a single response array.
 - **Render Free Tier Cold Starts:** On Render's Free tier, services spin down after 15 minutes of inactivity. When a new request arrives, a cold start latency of 20–40 seconds is expected before the application responds. All database records remain durable in Neon throughout sleep periods.
 
 ---
 
-## Project Directory Structure
+## 12. Project Directory Structure
 
 ```text
 TO-DO/
 ├── .gitignore               # Excludes node_modules, data/*.db, .env, OS files
 ├── DEPLOYMENT.md            # Detailed Neon & Render production deployment guide
-├── Q1_CaseStudy.md          # Technical documentation on SPA deployment strategies
 ├── README.md                # Comprehensive portfolio and developer documentation
 ├── package-lock.json        # Deterministic dependency lockfile
 ├── package.json             # Project metadata, scripts, and production dependencies
@@ -487,19 +440,15 @@ TO-DO/
 │   ├── database.js          # Central database router (dispatches to postgres or sqlite)
 │   ├── postgres.js          # PostgreSQL adapter (pg.Pool, parameterized SQL, DDL, SSL)
 │   └── sqlite.js            # SQLite adapter (better-sqlite3, WAL mode, memory mode)
+├── docs/
+│   └── screenshots/         # Application dashboard screenshots
+│       ├── todo-dashboard.png
+│       └── todo-dashboard-tasks.png
 ├── public/
-│   ├── emi.html             # EMI Loan Calculator page
-│   ├── hotel.html           # Hotel Bill Generator page
-│   ├── index.html           # Preserved legacy assignment navigation hub
-│   ├── q1.html              # Dynamic SPA Deployment case study page
 │   ├── todo.html            # Main task management dashboard page
 │   ├── css/
-│   │   ├── emi.css          # Styling for EMI calculator
-│   │   ├── hotel.css        # Styling for Hotel bill generator
 │   │   └── todo.css         # Modern dark-mode styling for To-Do dashboard
 │   └── js/
-│       ├── emi.js           # Client logic for EMI calculator
-│       ├── hotel.js         # Client logic for Hotel bill generator
 │       └── todo.js          # Client logic for To-Do dashboard (API, modals, search)
 ├── routes/
 │   └── todos.js             # REST API router (/api/todos) with input validation
@@ -512,9 +461,9 @@ TO-DO/
 
 ---
 
-## Planned Future Enhancements
+## 13. Planned Future Improvements
 
-The following features represent architectural additions planned for future iterations:
+The following architectural additions are planned for future iterations:
 - **User Authentication & Authorization:** Multi-tenant workspace separation using JWT and bcrypt or OAuth2 authentication.
 - **Pagination & Infinite Scrolling:** Server-side `limit` and `offset` query parameters for high-volume task collections.
 - **Rate Limiting Middleware:** Abuse prevention using `express-rate-limit` on public write endpoints (`POST`, `PATCH`, `DELETE`).
@@ -523,6 +472,6 @@ The following features represent architectural additions planned for future iter
 
 ---
 
-## License
+## 14. License
 
 This project's package manifest specifies the **ISC** license in [`package.json`](package.json). No standalone `LICENSE` text file is currently included in the root repository.
