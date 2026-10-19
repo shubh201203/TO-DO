@@ -215,7 +215,6 @@ body {
 }
 
 .stat-icon {
-    font-size: 1.35rem;
     width: 36px;
     height: 36px;
     border-radius: var(--radius-sm);
@@ -224,6 +223,27 @@ body {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    color: var(--text-muted);
+}
+
+.stat-card.total .stat-icon {
+    color: #818cf8;
+    background: var(--primary-subtle);
+}
+
+.stat-card.pending .stat-icon {
+    color: #fbbf24;
+    background: var(--warning-subtle);
+}
+
+.stat-card.completed .stat-icon {
+    color: #34d399;
+    background: var(--success-subtle);
+}
+
+.stat-card.overdue .stat-icon {
+    color: #fb7185;
+    background: var(--danger-subtle);
 }
 
 .stat-info {
@@ -675,7 +695,7 @@ textarea::placeholder {
 }
 
 .todo-item.completed .checkbox::after {
-    content: "✓";
+    content: "\2713";
     color: #ffffff;
     font-size: 13px;
     font-weight: 700;
