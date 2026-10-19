@@ -45,7 +45,7 @@ test('Server route verification and error handling', async (t) => {
     await t.test('GET /todo serves Todo App with status 200', async () => {
         const res = await request('/todo');
         assert.equal(res.statusCode, 200);
-        assert.match(res.body, /<title>Node\.js Todo App<\/title>/);
+        assert.match(res.body, /<title>Full-Stack Task Manager<\/title>/);
         assert.match(res.body, /id="todo-form"/);
     });
 
@@ -71,7 +71,7 @@ test('Server route verification and error handling', async (t) => {
         const res = await request('/js/todo.js');
         assert.equal(res.statusCode, 200);
         assert.match(res.body, /textContent/);
-        assert.match(res.body, /loadTodos/);
+        assert.match(res.body, /fetchTodos/);
     });
 
     await t.test('GET /non-existent-route returns 404 Page not found', async () => {

@@ -4,8 +4,30 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Initialize SQLite database
+const db = require('./db/database');
+db.initDb();
+
+// Parse JSON bodies
+app.use(express.json());
+
+// Handle malformed JSON gracefully
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        return res.status(400).json({
+            success: false,
+            error: 'Malformed JSON payload in request body.'
+        });
+    }
+    next(err);
+});
+
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Mount Todo REST API router
+const todosRouter = require('./routes/todos');
+app.use('/api/todos', todosRouter);
 
 // Helper to safely send html files with error handling
 function servePage(res, next, filename) {
