@@ -1,14 +1,16 @@
 # Full-Stack Task Manager & Web Hub
 
-A full-stack, database-backed Task Management application and interactive multi-utility web hub built with Node.js, Express, SQLite (`better-sqlite3`), and Vanilla JavaScript.
+A production-hardened, full-stack Task Management dashboard and interactive multi-utility web hub built with Node.js, Express, SQLite (`better-sqlite3`), and Vanilla JavaScript.
+
+Designed for production deployment on **Render** with persistent disk volume storage.
 
 ---
 
 ## Overview
 
-This project provides a persistent task manager alongside utility web tools, engineered with separation of concerns between client, REST API layer, and an embedded SQLite database:
+This project provides a persistent task manager alongside utility web tools, engineered with clear separation of concerns between client, REST API layer, and an embedded SQLite database:
 
-- **Task Manager (`/todo`):** Production-ready full-stack task management interface with persistent CRUD operations, live dashboard metrics, full-text search, multi-factor filtering, priority levels, due date tracking, and inline modal editing.
+- **Task Manager (`/todo`):** Production-ready full-stack task workspace featuring persistent CRUD operations, live KPI summary metrics, debounced search, status and priority filters, due date tracking with overdue flags, and accessible modal editing and delete confirmations.
 - **Navigation Hub (`/`):** Unified portal providing access to all tools.
 - **EMI Loan Calculator (`/emi`):** Dynamic monthly loan installment and amortization calculator.
 - **Hotel Bill Screen (`/hotel`):** Receipt generator with itemized selection and automated GST calculation.
@@ -19,30 +21,35 @@ This project provides a persistent task manager alongside utility web tools, eng
 ## Architecture & Technology Stack
 
 ```text
-[ Browser Client ]
+[ Browser Client (HTML5 / CSS3 / Vanilla JS) ]
       │
-      ├── Static Assets (HTML5, CSS3, ES6+ JS)
+      ├── Static Assets (/public)
       │
       └── Fetch API ──▶ [ Express REST API (/api/todos) ]
-                               │
-                               ├── Request Validation & Mass-Assignment Filter
-                               │
-                               └── [ SQLite Database (better-sqlite3) ]
-                                     └── Persistent Storage: data/todos.db
+                              │
+                              ├── HTTP Security Headers (CSP, nosniff, frame-guard)
+                              ├── JSON Payload Limit (100kb) & Validation
+                              ├── Mass-Assignment Whitelist Filter
+                              │
+                              └── [ SQLite Database (better-sqlite3) ]
+                                    ├── WAL Mode & Pragmas
+                                    ├── Local Dev: data/todos.db
+                                    └── Render Production: /var/data/todos.db (Persistent Disk)
 ```
 
 - **Backend Runtime:** Node.js (v18+)
 - **Server Framework:** Express 5 (`server.js`)
-- **Database:** SQLite via `better-sqlite3` with Write-Ahead Logging (`WAL` mode)
-- **Frontend:** Vanilla HTML5, CSS3 (CSS Variables, Flexbox, CSS Grid), ES6+ JavaScript
-- **Styling:** Custom dark-mode design system with Google Font `Outfit`
-- **Testing:** Node.js native test runner (`node:test` and `node:assert`)
+- **Database:** SQLite via `better-sqlite3` with Write-Ahead Logging (`WAL` mode) and configurable `DATABASE_PATH`
+- **Frontend:** Vanilla HTML5, modern CSS3 (CSS Variables, Flexbox, CSS Grid), ES6+ JavaScript
+- **Styling:** Linear-inspired modern dark productivity theme with Google Font `Outfit`
+- **Testing:** Node.js native test runner (`node:test` and `node:assert/strict`) — 38 automated tests
+- **Deployment:** Render Web Service with attached Persistent Disk (`render.yaml` Blueprint included)
 
 ---
 
 ## Database Schema & Persistence
 
-The application automatically initializes the SQLite schema on startup in a local directory (`data/todos.db`). Database files and SQLite journal/WAL artifacts are excluded from Git tracking via `.gitignore`.
+The application automatically initializes the SQLite schema on startup in a local directory (`data/todos.db` by default, or configured via `process.env.DATABASE_PATH`). Database files and SQLite journal/WAL artifacts are excluded from Git tracking via `.gitignore`.
 
 ### Schema Definition
 ```sql
@@ -68,7 +75,7 @@ CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(due_date);
 - `description`: Optional text, maximum 1000 characters.
 - `completed`: Boolean flag (stored as integer `0` or `1`).
 - `priority`: Validated against `'low'`, `'medium'`, or `'high'` (defaults to `'medium'`).
-- `due_date`: Optional ISO date string (`YYYY-MM-DD` or parseable date string).
+- `due_date`: Optional date string (`YYYY-MM-DD` or valid date string).
 - `created_at` / `updated_at`: UTC timestamps generated automatically via SQLite `datetime('now')`.
 
 ---
@@ -81,8 +88,9 @@ All API endpoints return standard JSON responses with a `success: boolean` prope
 
 | Method | Endpoint | Description |
 |---|---|---|
+| `GET` | `/health` | Lightweight service and database health check for Render monitoring. |
 | `GET` | `/api/todos` | Retrieve tasks with optional filtering and sorting. |
-| `GET` | `/api/todos/summary` | Retrieve live dashboard task counts. |
+| `GET` | `/api/todos/summary` | Retrieve live dashboard task metrics (total, pending, completed, overdue). |
 | `GET` | `/api/todos/:id` | Retrieve a single task by ID. |
 | `POST` | `/api/todos` | Create a new task. |
 | `PATCH` | `/api/todos/:id` | Update specific fields of an existing task. |
@@ -92,17 +100,27 @@ All API endpoints return standard JSON responses with a `success: boolean` prope
 
 ### Example Requests & Responses
 
-#### 1. Create a Task (`POST /api/todos`)
+#### 1. Health Check (`GET /health`)
+**Response (`200 OK`):**
+```json
+{
+  "status": "ok",
+  "uptime": 142,
+  "timestamp": "2026-10-19T05:15:00.000Z"
+}
+```
+
+#### 2. Create a Task (`POST /api/todos`)
 **Request:**
 ```http
 POST /api/todos HTTP/1.1
 Content-Type: application/json
 
 {
-  "title": "Implement API Rate Limiting",
-  "description": "Add token bucket middleware to express routes",
+  "title": "Configure Render persistent disk",
+  "description": "Mount /var/data and verify database persistence across deploys",
   "priority": "high",
-  "dueDate": "2026-11-01"
+  "dueDate": "2026-10-30"
 }
 ```
 
@@ -113,18 +131,18 @@ Content-Type: application/json
   "message": "Task created successfully.",
   "data": {
     "id": 1,
-    "title": "Implement API Rate Limiting",
-    "description": "Add token bucket middleware to express routes",
+    "title": "Configure Render persistent disk",
+    "description": "Mount /var/data and verify database persistence across deploys",
     "completed": false,
     "priority": "high",
-    "dueDate": "2026-11-01",
+    "dueDate": "2026-10-30",
     "createdAt": "2026-10-19 01:10:00",
     "updatedAt": "2026-10-19 01:10:00"
   }
 }
 ```
 
-#### 2. Get All Tasks with Query Filters (`GET /api/todos`)
+#### 3. Get All Tasks with Query Filters (`GET /api/todos`)
 Supported query parameters:
 - `status`: `all`, `pending`, `completed`
 - `priority`: `low`, `medium`, `high`
@@ -145,11 +163,11 @@ GET /api/todos?status=pending&priority=high&sortBy=dueDate HTTP/1.1
   "data": [
     {
       "id": 1,
-      "title": "Implement API Rate Limiting",
-      "description": "Add token bucket middleware to express routes",
+      "title": "Configure Render persistent disk",
+      "description": "Mount /var/data and verify database persistence across deploys",
       "completed": false,
       "priority": "high",
-      "dueDate": "2026-11-01",
+      "dueDate": "2026-10-30",
       "createdAt": "2026-10-19 01:10:00",
       "updatedAt": "2026-10-19 01:10:00"
     }
@@ -157,7 +175,7 @@ GET /api/todos?status=pending&priority=high&sortBy=dueDate HTTP/1.1
 }
 ```
 
-#### 3. Update Task Status or Fields (`PATCH /api/todos/:id`)
+#### 4. Update Task Status or Fields (`PATCH /api/todos/:id`)
 **Request:**
 ```http
 PATCH /api/todos/1 HTTP/1.1
@@ -175,18 +193,18 @@ Content-Type: application/json
   "message": "Task updated successfully.",
   "data": {
     "id": 1,
-    "title": "Implement API Rate Limiting",
-    "description": "Add token bucket middleware to express routes",
+    "title": "Configure Render persistent disk",
+    "description": "Mount /var/data and verify database persistence across deploys",
     "completed": true,
     "priority": "high",
-    "dueDate": "2026-11-01",
+    "dueDate": "2026-10-30",
     "createdAt": "2026-10-19 01:10:00",
     "updatedAt": "2026-10-19 01:15:20"
   }
 }
 ```
 
-#### 4. Dashboard Summary Metrics (`GET /api/todos/summary`)
+#### 5. Dashboard Summary Metrics (`GET /api/todos/summary`)
 **Response (`200 OK`):**
 ```json
 {
@@ -200,36 +218,42 @@ Content-Type: application/json
 }
 ```
 
-#### 5. Validation Error Example (`400 Bad Request`)
-```json
-{
-  "success": false,
-  "error": "Validation Error: Title is required and cannot be empty."
-}
-```
-
 ---
 
 ## Security & Reliability Engineering
 
-1. **Mass Assignment Prevention:** The update and creation handlers enforce an explicit property whitelist (`title`, `description`, `completed`, `priority`, `dueDate`). Internal keys such as `id`, `created_at`, or foreign properties are discarded.
-2. **SQL Injection Defense:** All SQLite interactions use parameterized prepared statements (`?` placeholders) via `better-sqlite3`. No raw string concatenation is executed against the database.
-3. **Cross-Site Scripting (XSS) Prevention:** User-supplied task names and descriptions are injected into the DOM exclusively via `textContent` and native DOM element creation.
-4. **Defensive Error Handling:**
-   - Malformed JSON payloads return a clean `400 Bad Request` instead of triggering unhandled syntax exceptions.
-   - Centralized 500 handler avoids leaking internal server stack traces to clients.
+1. **HTTP Security Headers:** Integrated middleware enforces defensive HTTP response headers:
+   - `X-Content-Type-Options: nosniff` (prevents MIME type sniffing)
+   - `X-Frame-Options: SAMEORIGIN` (mitigates clickjacking attacks)
+   - `Referrer-Policy: strict-origin-when-cross-origin`
+   - `Permissions-Policy: geolocation=(), camera=(), microphone=()`
+   - `Content-Security-Policy` restricting script, style, and font origins.
+2. **Body Parser Limits & JSON Guard:** Request bodies are restricted to `100kb` with graceful handling of malformed JSON payloads.
+3. **Mass Assignment Prevention:** The update and creation handlers enforce an explicit property whitelist (`title`, `description`, `completed`, `priority`, `dueDate`). Internal keys such as `id`, `created_at`, or extraneous client properties are discarded.
+4. **SQL Injection Defense:** All SQLite interactions use parameterized prepared statements (`?` placeholders) via `better-sqlite3`. No raw string concatenation is executed against the database.
+5. **Cross-Site Scripting (XSS) Prevention:** User-supplied task names and descriptions are injected into the DOM exclusively via `textContent` and native DOM element creation.
+6. **Defensive Error Handling:**
+   - Centralized error handlers return clean JSON errors for `/api/*` requests without leaking internal server stack traces to clients.
    - Non-numeric or negative task IDs return descriptive `400 Bad Request` responses.
+   - Empty update requests are validated and rejected with `400 Bad Request`.
 
 ---
 
-## Prerequisites
+## Production Deployment on Render
 
-- **Node.js:** v18.0.0 or later (Node.js v20+ or v24+ recommended)
-- **npm:** v9.0.0 or later
+This application is ready to deploy on **Render** as a Node.js Web Service with a **Persistent Disk**.
+
+For complete step-by-step instructions, backup procedures, and troubleshooting, consult **[`DEPLOYMENT.md`](./DEPLOYMENT.md)**.
+
+### Quick Start with Render Blueprint:
+1. Push your repository to GitHub.
+2. Log in to the [Render Dashboard](https://dashboard.render.com).
+3. Click **New +** &rarr; **Blueprint** and connect this repository (`shubh201203/TO-DO`).
+4. Render automatically parses `render.yaml`, provisions a 1 GB persistent disk mounted at `/var/data`, sets `DATABASE_PATH=/var/data/todos.db`, and deploys the application.
 
 ---
 
-## Installation & Setup
+## Local Installation & Setup
 
 1. **Clone the repository:**
    ```bash
@@ -246,11 +270,16 @@ Content-Type: application/json
    ```bash
    npm start
    ```
-   The application will initialize `data/todos.db` automatically and listen on `http://localhost:3000` (or the port defined by `process.env.PORT`).
+   The application will initialize `data/todos.db` automatically and listen on `http://0.0.0.0:3000` (or the port defined by `process.env.PORT`).
+
+4. **Access the web tools:**
+   - Task Dashboard: `http://localhost:3000/todo`
+   - Navigation Portal: `http://localhost:3000/`
+   - Health Status: `http://localhost:3000/health`
 
 ---
 
-## Running Automated Tests
+## Automated Test Suite
 
 The test suite runs with Node.js built-in `node:test` runner and uses an isolated `:memory:` SQLite instance to avoid touching local development data:
 
@@ -258,15 +287,24 @@ The test suite runs with Node.js built-in `node:test` runner and uses an isolate
 npm test
 ```
 
-### Test Coverage (30 automated tests):
-- **Database Unit Tests:** Schema creation, CRUD operations, metadata handling, search/filter queries, overdue count calculations, and unsupported field rejection.
-- **REST API Integration Tests:** Endpoint status codes, body validation, 400 for empty title, 400 for invalid dates/priorities, 400 for malformed JSON, 404 for missing IDs, PATCH updates, and DELETE operations.
-- **Web Hub Route Verification:** Confirms `/`, `/todo`, `/q1`, `/emi`, `/hotel`, and static asset endpoints return `200 OK`.
-- **404 Not Found Handling:** Unmatched routes return clean 404 responses.
+### Test Coverage (38 passing automated tests):
+- **Database Unit Tests (8 tests):** Schema creation, CRUD operations, metadata handling, search/filter queries, overdue count calculations, health check query, and unsupported field rejection.
+- **REST API Integration Tests (11 tests):** Endpoint status codes, body validation, 400 for empty title, 400 for invalid dates/priorities, 400 for malformed JSON, 400 for empty PATCH payload, 400 for non-object bodies, 404 for missing IDs, PATCH updates, and DELETE operations.
+- **Web Hub Route Verification (10 tests):** Confirms `/`, `/todo`, `/q1`, `/emi`, `/hotel`, `/health`, and static asset endpoints return `200 OK`, validates security headers, and verifies clean 404 responses.
+- **Todo Logic & State Verification (5 tests):** Validates sanitization of untrusted payloads, filtering algorithms, completion clearing, overdue date calculation, and ISO date formatting.
 
 ---
 
-## Known Limitations & Deployment Considerations
+## Dependency Audit
 
-- **SQLite Storage on Ephemeral Platforms:** SQLite writes to a local file (`data/todos.db`). When deploying to serverless platforms (e.g. Vercel Serverless Functions) or container platforms with ephemeral storage (e.g. standard Render/Heroku instances without persistent volumes), the database file will reset on each redeployment or sleep cycle. For persistent multi-instance production hosting, a managed relational database (such as PostgreSQL or MySQL) or a persistent volume mount should be configured.
-- **Single-Tenant Operation:** Operates in single-user mode; does not currently enforce multi-user account authentication or tenant isolation.
+```bash
+npm audit
+# found 0 vulnerabilities
+```
+
+---
+
+## Known Limitations & Architecture Notes
+
+- **Single Web Instance Constraint:** SQLite relies on filesystem-level locks (POSIX locks). Render Persistent Disks can only be mounted to a single Web Service instance at a time. The application is therefore configured for single-instance deployment (`numInstances: 1`).
+- **Single-Tenant Workspace:** Operates in single-user mode without user authentication. Anyone with the public URL can view or edit tasks. Do not store sensitive or private credentials in task descriptions.

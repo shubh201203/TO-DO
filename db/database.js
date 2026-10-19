@@ -5,7 +5,7 @@ const fs = require('fs');
 let dbInstance = null;
 
 function initDb(customPath = null) {
-    const dbPath = customPath || process.env.DB_PATH || path.join(__dirname, '..', 'data', 'todos.db');
+    const dbPath = customPath || process.env.DATABASE_PATH || process.env.DB_PATH || path.join(__dirname, '..', 'data', 'todos.db');
 
     if (dbPath !== ':memory:') {
         const dir = path.dirname(dbPath);
@@ -19,6 +19,7 @@ function initDb(customPath = null) {
         db.pragma('journal_mode = WAL');
     }
     db.pragma('foreign_keys = ON');
+    db.pragma('busy_timeout = 5000');
 
     db.exec(`
         CREATE TABLE IF NOT EXISTS todos (
@@ -204,6 +205,16 @@ function getDashboardCounts() {
     };
 }
 
+function checkHealth() {
+    try {
+        const db = getDb();
+        const row = db.prepare('SELECT 1 as healthy').get();
+        return Boolean(row && row.healthy === 1);
+    } catch (err) {
+        return false;
+    }
+}
+
 module.exports = {
     initDb,
     getDb,
@@ -214,5 +225,6 @@ module.exports = {
     createTodo,
     updateTodo,
     deleteTodo,
-    getDashboardCounts
+    getDashboardCounts,
+    checkHealth
 };

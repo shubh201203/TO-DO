@@ -131,4 +131,9 @@ test('SQLite Database Module Unit Tests', async (t) => {
         assert.equal(counts.completed, 1);
         assert.equal(counts.overdue, 1);
     });
+
+    await t.test('checkHealth reports true for operational database instance', () => {
+        const isHealthy = db.checkHealth();
+        assert.equal(isHealthy, true);
+    });
 });

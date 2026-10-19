@@ -4,6 +4,7 @@ const db = require('../db/database');
 
 function isValidDate(dateStr) {
     if (!dateStr) return true;
+    if (typeof dateStr !== 'string') return false;
     const timestamp = Date.parse(dateStr);
     return !isNaN(timestamp);
 }
@@ -91,6 +92,13 @@ router.get('/:id', (req, res, next) => {
 // POST /api/todos - Create new task
 router.post('/', (req, res, next) => {
     try {
+        if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Validation Error: Request body must be a JSON object.'
+            });
+        }
+
         const { title, description, priority, dueDate, due_date } = req.body;
 
         // Title validation
@@ -182,9 +190,16 @@ router.patch('/:id', (req, res, next) => {
 
         // Explicit field whitelist to prevent mass assignment
         for (const field of allowedFields) {
-            if (req.body[field] !== undefined) {
+            if (req.body && req.body[field] !== undefined) {
                 updates[field] = req.body[field];
             }
+        }
+
+        if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body) || Object.keys(updates).length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Validation Error: No valid fields provided for update.'
+            });
         }
 
         // Validate title if provided

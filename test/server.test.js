@@ -74,9 +74,34 @@ test('Server route verification and error handling', async (t) => {
         assert.match(res.body, /fetchTodos/);
     });
 
+    await t.test('GET /health returns status 200 and healthy status JSON', async () => {
+        const res = await request('/health');
+        assert.equal(res.statusCode, 200);
+        const data = JSON.parse(res.body);
+        assert.equal(data.status, 'ok');
+        assert.ok(typeof data.uptime === 'number');
+        assert.ok(data.timestamp);
+    });
+
+    await t.test('Server includes security headers in HTTP responses', async () => {
+        const res = await request('/health');
+        assert.equal(res.headers['x-content-type-options'], 'nosniff');
+        assert.equal(res.headers['x-frame-options'], 'SAMEORIGIN');
+        assert.equal(res.headers['referrer-policy'], 'strict-origin-when-cross-origin');
+        assert.ok(res.headers['content-security-policy']);
+    });
+
     await t.test('GET /non-existent-route returns 404 Page not found', async () => {
         const res = await request('/non-existent-route');
         assert.equal(res.statusCode, 404);
         assert.match(res.body, /Page not found/);
+    });
+
+    await t.test('GET /api/non-existent returns 404 JSON response', async () => {
+        const res = await request('/api/non-existent');
+        assert.equal(res.statusCode, 404);
+        const data = JSON.parse(res.body);
+        assert.equal(data.success, false);
+        assert.equal(data.error, 'Endpoint not found.');
     });
 });

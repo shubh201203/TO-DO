@@ -8,8 +8,18 @@ const PORT = process.env.PORT || 3000;
 const db = require('./db/database');
 db.initDb();
 
-// Parse JSON bodies
-app.use(express.json());
+// Security headers middleware
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';");
+    next();
+});
+
+// Parse JSON bodies with size limit
+app.use(express.json({ limit: '100kb' }));
 
 // Handle malformed JSON gracefully
 app.use((err, req, res, next) => {
@@ -20,6 +30,22 @@ app.use((err, req, res, next) => {
         });
     }
     next(err);
+});
+
+// Health check endpoint for uptime and Render deployment verification
+app.get('/health', (req, res) => {
+    const isHealthy = db.checkHealth();
+    if (!isHealthy) {
+        return res.status(503).json({
+            status: 'error',
+            error: 'Database check failed'
+        });
+    }
+    res.status(200).json({
+        status: 'ok',
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString()
+    });
 });
 
 // Serve static files from the 'public' directory
@@ -66,18 +92,31 @@ app.get('/hotel', (req, res, next) => {
 
 // 404 handler for unmatched routes
 app.use((req, res) => {
+    if (req.path && req.path.startsWith('/api')) {
+        return res.status(404).json({
+            success: false,
+            error: 'Endpoint not found.'
+        });
+    }
     res.status(404).send('Page not found');
 });
 
 // Centralized error handler
 app.use((err, req, res, next) => {
-    console.error('Unhandled server error:', err);
+    console.error('Unhandled server error:', err.message || err);
+    if (req.path && req.path.startsWith('/api')) {
+        return res.status(500).json({
+            success: false,
+            error: 'Internal Server Error'
+        });
+    }
     res.status(500).send('Internal Server Error');
 });
 
 if (require.main === module) {
-    app.listen(PORT, () => {
-        console.log(`Task Manager & Web Hub listening at http://localhost:${PORT}`);
+    const HOST = process.env.HOST || '0.0.0.0';
+    app.listen(PORT, HOST, () => {
+        console.log(`Task Manager & Web Hub listening at http://${HOST}:${PORT}`);
     });
 }
 

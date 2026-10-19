@@ -168,6 +168,45 @@ test('REST API Endpoint Integration Tests', async (t) => {
         assert.equal(updateRes.body.data.priority, 'high');
     });
 
+    await t.test('PATCH /api/todos/:id rejects empty payload with 400', async () => {
+        const created = await request('/api/todos', {
+            method: 'POST',
+            body: { title: 'Test For Empty Patch' }
+        });
+        const id = created.body.data.id;
+
+        const emptyRes = await request(`/api/todos/${id}`, {
+            method: 'PATCH',
+            body: {}
+        });
+        assert.equal(emptyRes.statusCode, 400);
+        assert.equal(emptyRes.body.success, false);
+        assert.match(emptyRes.body.error, /No valid fields provided/);
+    });
+
+    await t.test('POST /api/todos rejects non-object body and oversized fields', async () => {
+        const arrayRes = await request('/api/todos', {
+            method: 'POST',
+            body: ['invalid', 'array']
+        });
+        assert.equal(arrayRes.statusCode, 400);
+        assert.equal(arrayRes.body.success, false);
+
+        const longTitleRes = await request('/api/todos', {
+            method: 'POST',
+            body: { title: 'A'.repeat(256) }
+        });
+        assert.equal(longTitleRes.statusCode, 400);
+        assert.match(longTitleRes.body.error, /cannot exceed 255 characters/);
+
+        const longDescRes = await request('/api/todos', {
+            method: 'POST',
+            body: { title: 'Valid Title', description: 'D'.repeat(1001) }
+        });
+        assert.equal(longDescRes.statusCode, 400);
+        assert.match(longDescRes.body.error, /cannot exceed 1000 characters/);
+    });
+
     await t.test('DELETE /api/todos/:id removes task', async () => {
         const created = await request('/api/todos', {
             method: 'POST',

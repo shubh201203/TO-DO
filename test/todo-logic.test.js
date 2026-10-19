@@ -96,4 +96,34 @@ test('Todo state and security logic verification', async (t) => {
         assert.equal(remaining.length, 1);
         assert.equal(remaining[0].id, '1');
     });
+
+    await t.test('Overdue date detection accurately flags past dates', () => {
+        function isDatePast(dateStr) {
+            if (!dateStr) return false;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const target = new Date(dateStr);
+            return target < today;
+        }
+
+        assert.equal(isDatePast('2020-01-01'), true);
+        assert.equal(isDatePast('2099-12-31'), false);
+        assert.equal(isDatePast(null), false);
+        assert.equal(isDatePast(''), false);
+    });
+
+    await t.test('formatDateSimple extracts ISO calendar date cleanly', () => {
+        function formatDateSimple(isoString) {
+            if (!isoString) return '';
+            try {
+                return String(isoString).split(/[ T]/)[0] || '';
+            } catch (e) {
+                return '';
+            }
+        }
+
+        assert.equal(formatDateSimple('2026-10-19 14:30:00'), '2026-10-19');
+        assert.equal(formatDateSimple('2026-10-19T08:00:00.000Z'), '2026-10-19');
+        assert.equal(formatDateSimple(null), '');
+    });
 });

@@ -1,12 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM elements
+    // DOM elements - Creation form
     const form = document.getElementById('todo-form');
     const inputTitle = document.getElementById('todo-input');
     const inputDesc = document.getElementById('todo-desc');
     const selectPriority = document.getElementById('todo-priority');
     const inputDueDate = document.getElementById('todo-due-date');
     const addBtn = document.getElementById('add-btn');
+    const quickAddLink = document.getElementById('quick-add-link');
 
+    // DOM elements - Controls & Filters
     const searchInput = document.getElementById('search-input');
     const clearSearchBtn = document.getElementById('clear-search-btn');
     const filterBtns = document.querySelectorAll('.filter-btn');
@@ -14,20 +16,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const sortBySelect = document.getElementById('sort-by');
     const resetFiltersBtn = document.getElementById('reset-filters-btn');
 
+    // DOM elements - List & States
     const list = document.getElementById('todo-list');
     const taskCount = document.getElementById('task-count');
     const clearCompletedBtn = document.getElementById('clear-completed');
     const loadingState = document.getElementById('loading-state');
     const emptyState = document.getElementById('empty-state');
+    const emptyStateText = document.getElementById('empty-state-text');
     const statusBanner = document.getElementById('status-banner');
 
-    // Dashboard stat elements
+    // DOM elements - Dashboard summary metrics
     const statTotal = document.getElementById('stat-total');
     const statPending = document.getElementById('stat-pending');
     const statCompleted = document.getElementById('stat-completed');
     const statOverdue = document.getElementById('stat-overdue');
 
-    // Edit modal elements
+    // DOM elements - Edit Modal
     const editModal = document.getElementById('edit-modal');
     const editForm = document.getElementById('edit-form');
     const editIdInput = document.getElementById('edit-id');
@@ -36,35 +40,59 @@ document.addEventListener('DOMContentLoaded', () => {
     const editPriorityInput = document.getElementById('edit-priority');
     const editDueDateInput = document.getElementById('edit-due-date');
     const editCancelBtn = document.getElementById('edit-cancel-btn');
+    const editCloseX = document.getElementById('edit-close-x');
+    const editSaveBtn = document.getElementById('edit-save-btn');
 
-    // Delete modal elements
+    // DOM elements - Delete Modal
     const deleteModal = document.getElementById('delete-modal');
     const deleteCancelBtn = document.getElementById('delete-cancel-btn');
+    const deleteCloseX = document.getElementById('delete-close-x');
     const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
-    let taskPendingDeleteId = null;
+    const deleteModalText = document.getElementById('delete-modal-text');
 
-    // Filter & sort state
+    // Filter & Sort State
     let currentFilter = 'all';
     let currentPriority = '';
     let currentSearch = '';
     let currentSort = 'createdAt';
     let searchDebounceTimeout = null;
 
+    // Race condition prevention: tracks active fetch request sequence
+    let latestFetchId = 0;
+
+    // Focus tracking for accessibility modal return
+    let lastActiveTriggerElement = null;
+    let taskPendingDeleteId = null;
+
     // Initial load
     fetchTodos();
     fetchSummary();
+
+    // Quick add focus
+    if (quickAddLink) {
+        quickAddLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            inputTitle.focus();
+            inputTitle.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    }
 
     // Event: Create Task
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = inputTitle.value.trim();
-        if (!title) return;
+        if (!title) {
+            showBanner('Please provide a task title.', 'error');
+            inputTitle.focus();
+            return;
+        }
 
         const description = inputDesc.value.trim();
         const priority = selectPriority.value;
         const dueDate = inputDueDate.value || null;
 
         addBtn.disabled = true;
+        const originalBtnText = addBtn.innerHTML;
         addBtn.textContent = 'Adding...';
 
         try {
@@ -74,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ title, description, priority, dueDate })
             });
 
-            const data = await res.json();
+            const data = await safeParseJson(res);
             if (!res.ok || !data.success) {
                 throw new Error(data.error || 'Failed to create task.');
             }
@@ -85,18 +113,18 @@ document.addEventListener('DOMContentLoaded', () => {
             selectPriority.value = 'medium';
             inputDueDate.value = '';
 
-            showBanner('Task created successfully!', 'success');
+            showBanner('Task created successfully.', 'success');
             await fetchTodos();
             await fetchSummary();
         } catch (err) {
-            showBanner(err.message, 'error');
+            showBanner(err.message || 'Error creating task.', 'error');
         } finally {
             addBtn.disabled = false;
-            addBtn.textContent = 'Add Task';
+            addBtn.innerHTML = originalBtnText;
         }
     });
 
-    // Event: Search Input
+    // Event: Search Input (debounced to avoid excessive requests)
     searchInput.addEventListener('input', () => {
         const query = searchInput.value;
         clearSearchBtn.style.display = query ? 'block' : 'none';
@@ -105,13 +133,14 @@ document.addEventListener('DOMContentLoaded', () => {
         searchDebounceTimeout = setTimeout(() => {
             currentSearch = query.trim();
             fetchTodos();
-        }, 250);
+        }, 200);
     });
 
     clearSearchBtn.addEventListener('click', () => {
         searchInput.value = '';
         currentSearch = '';
         clearSearchBtn.style.display = 'none';
+        searchInput.focus();
         fetchTodos();
     });
 
@@ -157,12 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchTodos();
     });
 
-    // Event: Clear Completed
+    // Event: Clear Completed Tasks
     clearCompletedBtn.addEventListener('click', async () => {
         try {
-            // Fetch completed tasks to delete
+            clearCompletedBtn.disabled = true;
             const res = await fetch('/api/todos?status=completed');
-            const data = await res.json();
+            const data = await safeParseJson(res);
             if (!res.ok || !data.success) {
                 throw new Error(data.error || 'Failed to retrieve completed tasks.');
             }
@@ -179,25 +208,32 @@ document.addEventListener('DOMContentLoaded', () => {
             await fetchTodos();
             await fetchSummary();
         } catch (err) {
-            showBanner(err.message, 'error');
+            showBanner(err.message || 'Error clearing completed tasks.', 'error');
+        } finally {
+            clearCompletedBtn.disabled = false;
         }
     });
 
-    // Modal: Cancel Edit
-    editCancelBtn.addEventListener('click', () => {
-        closeEditModal();
-    });
+    // Edit Modal Events
+    if (editCancelBtn) editCancelBtn.addEventListener('click', closeEditModal);
+    if (editCloseX) editCloseX.addEventListener('click', closeEditModal);
 
-    // Modal: Save Edit
     editForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = editIdInput.value;
         const title = editTitleInput.value.trim();
-        if (!title) return;
+        if (!title) {
+            showBanner('Title cannot be empty.', 'error');
+            editTitleInput.focus();
+            return;
+        }
 
         const description = editDescInput.value.trim();
         const priority = editPriorityInput.value;
         const dueDate = editDueDateInput.value || null;
+
+        editSaveBtn.disabled = true;
+        editSaveBtn.textContent = 'Saving...';
 
         try {
             const res = await fetch(`/api/todos/${id}`, {
@@ -206,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ title, description, priority, dueDate })
             });
 
-            const data = await res.json();
+            const data = await safeParseJson(res);
             if (!res.ok || !data.success) {
                 throw new Error(data.error || 'Failed to update task.');
             }
@@ -216,14 +252,16 @@ document.addEventListener('DOMContentLoaded', () => {
             await fetchTodos();
             await fetchSummary();
         } catch (err) {
-            showBanner(err.message, 'error');
+            showBanner(err.message || 'Error updating task.', 'error');
+        } finally {
+            editSaveBtn.disabled = false;
+            editSaveBtn.textContent = 'Save Changes';
         }
     });
 
-    // Modal: Delete Confirm & Cancel
-    deleteCancelBtn.addEventListener('click', () => {
-        closeDeleteModal();
-    });
+    // Delete Modal Events
+    if (deleteCancelBtn) deleteCancelBtn.addEventListener('click', closeDeleteModal);
+    if (deleteCloseX) deleteCloseX.addEventListener('click', closeDeleteModal);
 
     deleteConfirmBtn.addEventListener('click', async () => {
         if (!taskPendingDeleteId) return;
@@ -232,29 +270,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
-            const data = await res.json();
+            const data = await safeParseJson(res);
             if (!res.ok || !data.success) {
                 throw new Error(data.error || 'Failed to delete task.');
             }
 
-            showBanner('Task deleted.', 'success');
+            showBanner('Task deleted successfully.', 'success');
             await fetchTodos();
             await fetchSummary();
         } catch (err) {
-            showBanner(err.message, 'error');
+            showBanner(err.message || 'Error deleting task.', 'error');
         }
     });
 
-    // Keyboard support: Escape closes open modals
+    // Overlay backdrop click to close
+    [editModal, deleteModal].forEach(modal => {
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeEditModal();
+                    closeDeleteModal();
+                }
+            });
+        }
+    });
+
+    // Keyboard support: Escape closes open dialogs
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            closeEditModal();
-            closeDeleteModal();
+            if (editModal.style.display !== 'none') closeEditModal();
+            if (deleteModal.style.display !== 'none') closeDeleteModal();
         }
     });
 
-    // API: Fetch Todos
+    // API: Fetch Todos (with race condition prevention)
     async function fetchTodos() {
+        const thisFetchId = ++latestFetchId;
         loadingState.style.display = 'flex';
         emptyState.style.display = 'none';
 
@@ -266,7 +317,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const res = await fetch(`/api/todos?${params.toString()}`);
-            const data = await res.json();
+            const data = await safeParseJson(res);
+
+            // Ignore stale response if a newer query has fired
+            if (thisFetchId !== latestFetchId) return;
 
             if (!res.ok || !data.success) {
                 throw new Error(data.error || 'Could not load tasks.');
@@ -274,10 +328,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             renderTodoList(data.data);
         } catch (err) {
-            list.innerHTML = '';
-            showBanner(err.message, 'error');
+            if (thisFetchId === latestFetchId) {
+                list.innerHTML = '';
+                showBanner(err.message || 'Error loading tasks from server.', 'error');
+            }
         } finally {
-            loadingState.style.display = 'none';
+            if (thisFetchId === latestFetchId) {
+                loadingState.style.display = 'none';
+            }
         }
     }
 
@@ -285,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchSummary() {
         try {
             const res = await fetch('/api/todos/summary');
-            const data = await res.json();
+            const data = await safeParseJson(res);
             if (res.ok && data.success) {
                 const s = data.data;
                 statTotal.textContent = s.total;
@@ -294,19 +352,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 statOverdue.textContent = s.overdue;
 
                 taskCount.textContent = `${s.pending} item${s.pending !== 1 ? 's' : ''} left`;
-                clearCompletedBtn.style.display = s.completed > 0 ? 'block' : 'none';
+                clearCompletedBtn.style.display = s.completed > 0 ? 'inline-block' : 'none';
             }
         } catch (err) {
-            console.error('Failed to update summary counts:', err);
+            console.error('Failed to update summary metrics:', err);
         }
     }
 
-    // Safe DOM Rendering for Todo List
+    // Safe DOM Rendering for Todo List (XSS proof via textContent only)
     function renderTodoList(todos) {
         list.innerHTML = '';
 
         if (!todos || todos.length === 0) {
             emptyState.style.display = 'flex';
+            if (currentSearch || currentPriority || currentFilter !== 'all') {
+                emptyStateText.textContent = 'No tasks match your current search or filters.';
+            } else {
+                emptyStateText.textContent = 'No tasks found. Create your first task using the form above!';
+            }
             return;
         }
 
@@ -317,13 +380,13 @@ document.addEventListener('DOMContentLoaded', () => {
             li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
             li.dataset.id = todo.id;
 
-            // Custom Checkbox
+            // Custom accessible Checkbox
             const checkbox = document.createElement('div');
             checkbox.className = 'checkbox';
             checkbox.setAttribute('role', 'checkbox');
             checkbox.setAttribute('aria-checked', todo.completed ? 'true' : 'false');
             checkbox.setAttribute('tabindex', '0');
-            checkbox.setAttribute('aria-label', `Mark task "${todo.title}" as ${todo.completed ? 'pending' : 'completed'}`);
+            checkbox.setAttribute('aria-label', `Mark task "${todo.title}" as ${todo.completed ? 'incomplete' : 'complete'}`);
             checkbox.addEventListener('click', () => toggleTodo(todo.id, !todo.completed));
             checkbox.addEventListener('keydown', (e) => {
                 if (e.key === ' ' || e.key === 'Enter') {
@@ -338,17 +401,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const title = document.createElement('span');
             title.className = 'task-title';
-            title.textContent = todo.title; // Safe plain text
+            title.textContent = todo.title; // Safe plain text insertion
             body.appendChild(title);
 
             if (todo.description && todo.description.trim()) {
                 const desc = document.createElement('span');
                 desc.className = 'task-description';
-                desc.textContent = todo.description;
+                desc.textContent = todo.description; // Safe plain text insertion
                 body.appendChild(desc);
             }
 
-            // Meta tags (Priority & Due Date)
+            // Metadata tags
             const metaTags = document.createElement('div');
             metaTags.className = 'task-meta-tags';
 
@@ -365,9 +428,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 metaTags.appendChild(dueDateBadge);
             }
 
+            if (todo.createdAt) {
+                const createdDate = document.createElement('span');
+                createdDate.className = 'task-created-at';
+                createdDate.textContent = `Created ${formatDateSimple(todo.createdAt)}`;
+                metaTags.appendChild(createdDate);
+            }
+
             body.appendChild(metaTags);
 
-            // Task Actions (Edit & Delete)
+            // Action Buttons
             const actions = document.createElement('div');
             actions.className = 'task-actions';
 
@@ -375,15 +445,23 @@ document.addEventListener('DOMContentLoaded', () => {
             editBtn.type = 'button';
             editBtn.className = 'icon-btn edit-btn';
             editBtn.setAttribute('aria-label', `Edit task "${todo.title}"`);
+            editBtn.setAttribute('title', 'Edit task');
             editBtn.textContent = '✎';
-            editBtn.addEventListener('click', () => openEditModal(todo));
+            editBtn.addEventListener('click', (e) => {
+                lastActiveTriggerElement = e.currentTarget;
+                openEditModal(todo);
+            });
 
             const deleteBtn = document.createElement('button');
             deleteBtn.type = 'button';
             deleteBtn.className = 'icon-btn delete-btn';
             deleteBtn.setAttribute('aria-label', `Delete task "${todo.title}"`);
+            deleteBtn.setAttribute('title', 'Delete task');
             deleteBtn.textContent = '×';
-            deleteBtn.addEventListener('click', () => openDeleteModal(todo.id, todo.title));
+            deleteBtn.addEventListener('click', (e) => {
+                lastActiveTriggerElement = e.currentTarget;
+                openDeleteModal(todo.id, todo.title);
+            });
 
             actions.appendChild(editBtn);
             actions.appendChild(deleteBtn);
@@ -396,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // API: Toggle Completed
+    // API: Toggle Completed status
     async function toggleTodo(id, newStatus) {
         try {
             const res = await fetch(`/api/todos/${id}`, {
@@ -405,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ completed: newStatus })
             });
 
-            const data = await res.json();
+            const data = await safeParseJson(res);
             if (!res.ok || !data.success) {
                 throw new Error(data.error || 'Failed to update task status.');
             }
@@ -413,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await fetchTodos();
             await fetchSummary();
         } catch (err) {
-            showBanner(err.message, 'error');
+            showBanner(err.message || 'Error updating status.', 'error');
         }
     }
 
@@ -432,12 +510,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function closeEditModal() {
         editModal.style.display = 'none';
         editForm.reset();
+        if (lastActiveTriggerElement) {
+            lastActiveTriggerElement.focus();
+            lastActiveTriggerElement = null;
+        }
     }
 
     function openDeleteModal(id, title) {
         taskPendingDeleteId = id;
-        const text = document.getElementById('delete-modal-text');
-        text.textContent = `Are you sure you want to delete "${title}"? This cannot be undone.`;
+        deleteModalText.textContent = `Are you sure you want to delete "${title}"? This action cannot be undone.`;
         deleteModal.style.display = 'flex';
         deleteConfirmBtn.focus();
     }
@@ -445,6 +526,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function closeDeleteModal() {
         deleteModal.style.display = 'none';
         taskPendingDeleteId = null;
+        if (lastActiveTriggerElement) {
+            lastActiveTriggerElement.focus();
+            lastActiveTriggerElement = null;
+        }
     }
 
     function isDatePast(dateStr) {
@@ -453,6 +538,23 @@ document.addEventListener('DOMContentLoaded', () => {
         today.setHours(0, 0, 0, 0);
         const target = new Date(dateStr);
         return target < today;
+    }
+
+    function formatDateSimple(isoString) {
+        if (!isoString) return '';
+        try {
+            return String(isoString).split(/[ T]/)[0] || '';
+        } catch (e) {
+            return '';
+        }
+    }
+
+    async function safeParseJson(res) {
+        try {
+            return await res.json();
+        } catch (e) {
+            return { success: false, error: 'Server returned an invalid JSON response.' };
+        }
     }
 
     function showBanner(message, type = 'info') {
