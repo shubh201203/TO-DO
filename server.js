@@ -1,12 +1,9 @@
 const express = require('express');
 const path = require('path');
+const db = require('./db/database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Initialize SQLite database
-const db = require('./db/database');
-db.initDb();
 
 // Security headers middleware
 app.use((req, res, next) => {
@@ -33,16 +30,18 @@ app.use((err, req, res, next) => {
 });
 
 // Health check endpoint for uptime and Render deployment verification
-app.get('/health', (req, res) => {
-    const isHealthy = db.checkHealth();
+app.get('/health', async (req, res) => {
+    const isHealthy = await db.checkHealth();
     if (!isHealthy) {
         return res.status(503).json({
             status: 'error',
+            database: db.getDriverName(),
             error: 'Database check failed'
         });
     }
     res.status(200).json({
         status: 'ok',
+        database: db.getDriverName(),
         uptime: Math.floor(process.uptime()),
         timestamp: new Date().toISOString()
     });
@@ -115,12 +114,30 @@ app.use((err, req, res, next) => {
     res.status(500).send('Internal Server Error');
 });
 
+// Graceful process termination
+async function handleShutdown(signal) {
+    console.log(`Received ${signal}, shutting down database connection...`);
+    try {
+        await db.closeDb();
+    } catch (err) {
+        console.error('Error during shutdown database cleanup:', err.message || err);
+    }
+    process.exit(0);
+}
+
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+process.on('SIGINT', () => handleShutdown('SIGINT'));
+
 if (require.main === module) {
     const HOST = process.env.HOST || '0.0.0.0';
-    app.listen(PORT, HOST, () => {
-        console.log(`Task Manager & Web Hub listening at http://${HOST}:${PORT}`);
+    db.initDb().then(() => {
+        app.listen(PORT, HOST, () => {
+            console.log(`Task Manager & Web Hub (${db.getDriverName()}) listening at http://${HOST}:${PORT}`);
+        });
+    }).catch(err => {
+        console.error('Failed to initialize database on startup:', err.message || err);
+        process.exit(1);
     });
 }
 
 module.exports = app;
-

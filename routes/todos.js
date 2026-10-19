@@ -10,9 +10,9 @@ function isValidDate(dateStr) {
 }
 
 // GET /api/todos/summary - Dashboard counts
-router.get('/summary', (req, res, next) => {
+router.get('/summary', async (req, res, next) => {
     try {
-        const summary = db.getDashboardCounts();
+        const summary = await db.getDashboardCounts();
         res.json({
             success: true,
             data: summary
@@ -23,7 +23,7 @@ router.get('/summary', (req, res, next) => {
 });
 
 // GET /api/todos - List todos with filtering and sorting
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
     try {
         const { status, priority, search, sortBy, sortOrder } = req.query;
 
@@ -43,7 +43,7 @@ router.get('/', (req, res, next) => {
             });
         }
 
-        const todos = db.getAllTodos({
+        const todos = await db.getAllTodos({
             status: status ? status.toLowerCase() : 'all',
             priority: priority ? priority.toLowerCase() : undefined,
             search,
@@ -62,7 +62,7 @@ router.get('/', (req, res, next) => {
 });
 
 // GET /api/todos/:id - Retrieve single todo
-router.get('/:id', (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
     try {
         const id = parseInt(req.params.id, 10);
         if (isNaN(id) || id <= 0) {
@@ -72,7 +72,7 @@ router.get('/:id', (req, res, next) => {
             });
         }
 
-        const todo = db.getTodoById(id);
+        const todo = await db.getTodoById(id);
         if (!todo) {
             return res.status(404).json({
                 success: false,
@@ -90,7 +90,7 @@ router.get('/:id', (req, res, next) => {
 });
 
 // POST /api/todos - Create new task
-router.post('/', (req, res, next) => {
+router.post('/', async (req, res, next) => {
     try {
         if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
             return res.status(400).json({
@@ -149,7 +149,7 @@ router.post('/', (req, res, next) => {
             });
         }
 
-        const newTodo = db.createTodo({
+        const newTodo = await db.createTodo({
             title: title.trim(),
             description: description || '',
             priority: normalizedPriority,
@@ -167,7 +167,7 @@ router.post('/', (req, res, next) => {
 });
 
 // PATCH /api/todos/:id - Update task fields
-router.patch('/:id', (req, res, next) => {
+router.patch('/:id', async (req, res, next) => {
     try {
         const id = parseInt(req.params.id, 10);
         if (isNaN(id) || id <= 0) {
@@ -177,7 +177,7 @@ router.patch('/:id', (req, res, next) => {
             });
         }
 
-        const existing = db.getTodoById(id);
+        const existing = await db.getTodoById(id);
         if (!existing) {
             return res.status(404).json({
                 success: false,
@@ -268,7 +268,7 @@ router.patch('/:id', (req, res, next) => {
             }
         }
 
-        const updatedTodo = db.updateTodo(id, updates);
+        const updatedTodo = await db.updateTodo(id, updates);
 
         res.json({
             success: true,
@@ -281,7 +281,7 @@ router.patch('/:id', (req, res, next) => {
 });
 
 // DELETE /api/todos/:id - Delete task
-router.delete('/:id', (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
     try {
         const id = parseInt(req.params.id, 10);
         if (isNaN(id) || id <= 0) {
@@ -291,7 +291,7 @@ router.delete('/:id', (req, res, next) => {
             });
         }
 
-        const deleted = db.deleteTodo(id);
+        const deleted = await db.deleteTodo(id);
         if (!deleted) {
             return res.status(404).json({
                 success: false,

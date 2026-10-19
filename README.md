@@ -1,14 +1,14 @@
 # Full-Stack Task Manager & Web Hub
 
-A production-hardened, full-stack Task Management dashboard and interactive multi-utility web hub built with Node.js, Express, SQLite (`better-sqlite3`), and Vanilla JavaScript.
+A production-hardened, full-stack Task Management dashboard and interactive multi-utility web hub built with Node.js, Express, PostgreSQL, SQLite, and Vanilla JavaScript.
 
-Designed for production deployment on **Render** with persistent disk volume storage.
+Designed for production deployment on **Render's Free Web Service** with persistent cloud **PostgreSQL** storage (e.g. Neon, Supabase, or Render PostgreSQL), and seamless zero-configuration **SQLite** for local development.
 
 ---
 
 ## Overview
 
-This project provides a persistent task manager alongside utility web tools, engineered with clear separation of concerns between client, REST API layer, and an embedded SQLite database:
+This project provides a persistent task manager alongside utility web tools, engineered with clear separation of concerns between client, REST API layer, and an intelligent dual-engine persistence layer:
 
 - **Task Manager (`/` & `/todo`):** Production-ready full-stack task workspace served as the primary application homepage, featuring persistent CRUD operations, live KPI summary metrics, debounced search, status and priority filters, due date tracking with overdue flags, and accessible modal editing and delete confirmations.
 - **EMI Loan Calculator (`/emi`):** Dynamic monthly loan installment and amortization calculator.
@@ -31,27 +31,57 @@ This project provides a persistent task manager alongside utility web tools, eng
                               ├── JSON Payload Limit (100kb) & Validation
                               ├── Mass-Assignment Whitelist Filter
                               │
-                              └── [ SQLite Database (better-sqlite3) ]
-                                    ├── WAL Mode & Pragmas
-                                    ├── Local Dev: data/todos.db
-                                    └── Render Production: /var/data/todos.db (Persistent Disk)
+                              └── [ Dual-Engine Persistence Layer (db/database.js) ]
+                                    │
+                                    ├── Production: PostgreSQL (pg) via DATABASE_URL (Neon / Cloud)
+                                    └── Local Dev & Test: SQLite (better-sqlite3) via data/todos.db or :memory:
 ```
 
 - **Backend Runtime:** Node.js (v18+)
 - **Server Framework:** Express 5 (`server.js`)
-- **Database:** SQLite via `better-sqlite3` with Write-Ahead Logging (`WAL` mode) and configurable `DATABASE_PATH`
+- **Database Engine (Dual-Driver):**
+  - **Production:** PostgreSQL via `pg` with connection pooling, SSL/TLS support, and automated schema migration.
+  - **Local Development:** SQLite via `better-sqlite3` with Write-Ahead Logging (`WAL` mode).
 - **Frontend:** Vanilla HTML5, modern CSS3 (CSS Variables, Flexbox, CSS Grid), ES6+ JavaScript
 - **Styling:** Linear-inspired modern dark productivity theme with Google Font `Outfit`
-- **Testing:** Node.js native test runner (`node:test` and `node:assert/strict`) — 38 automated tests
-- **Deployment:** Render Web Service with attached Persistent Disk (`render.yaml` Blueprint included)
+- **Testing:** Node.js native test runner (`node:test` and `node:assert/strict`) — 52 automated tests
+- **Deployment:** Render Free Web Service with cloud PostgreSQL (`render.yaml` Blueprint included)
 
 ---
 
-## Database Schema & Persistence
+## Dual Database Architecture
 
-The application automatically initializes the SQLite schema on startup in a local directory (`data/todos.db` by default, or configured via `process.env.DATABASE_PATH`). Database files and SQLite journal/WAL artifacts are excluded from Git tracking via `.gitignore`.
+The backend utilizes an adapter architecture (`db/database.js`) that automatically switches storage engines based on the presence of the `DATABASE_URL` environment variable:
 
-### Schema Definition
+| Environment | Engine | Configuration | Behavior |
+|---|---|---|---|
+| **Production (Render)** | PostgreSQL (`pg`) | `DATABASE_URL=postgres://...` | Connects via pooled TLS connection; fails fast if unreachable (no silent fallback). |
+| **Local Development** | SQLite (`better-sqlite3`) | Default (no env var required) | Stores data locally in `data/todos.db` with WAL mode enabled. |
+| **Automated Tests** | In-Memory SQLite & Mock PG | Isolated test environments | Runs all 52 tests offline without live credentials or external databases. |
+
+### Database Schemas
+
+Both SQLite and PostgreSQL schemas are managed idempotently on server startup:
+
+#### PostgreSQL Schema (`db/postgres.js`)
+```sql
+CREATE TABLE IF NOT EXISTS todos (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT DEFAULT '',
+    completed BOOLEAN NOT NULL DEFAULT FALSE,
+    priority VARCHAR(20) NOT NULL DEFAULT 'medium',
+    due_date DATE DEFAULT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_todos_completed ON todos(completed);
+CREATE INDEX IF NOT EXISTS idx_todos_priority ON todos(priority);
+CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(due_date);
+```
+
+#### SQLite Schema (`db/sqlite.js`)
 ```sql
 CREATE TABLE IF NOT EXISTS todos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,20 +93,7 @@ CREATE TABLE IF NOT EXISTS todos (
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-
-CREATE INDEX IF NOT EXISTS idx_todos_completed ON todos(completed);
-CREATE INDEX IF NOT EXISTS idx_todos_priority ON todos(priority);
-CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(due_date);
 ```
-
-### Field Defaults & Validation:
-- `id`: Auto-incrementing positive integer primary key.
-- `title`: Required non-empty string, maximum 255 characters.
-- `description`: Optional text, maximum 1000 characters.
-- `completed`: Boolean flag (stored as integer `0` or `1`).
-- `priority`: Validated against `'low'`, `'medium'`, or `'high'` (defaults to `'medium'`).
-- `due_date`: Optional date string (`YYYY-MM-DD` or valid date string).
-- `created_at` / `updated_at`: UTC timestamps generated automatically via SQLite `datetime('now')`.
 
 ---
 
@@ -117,8 +134,8 @@ POST /api/todos HTTP/1.1
 Content-Type: application/json
 
 {
-  "title": "Configure Render persistent disk",
-  "description": "Mount /var/data and verify database persistence across deploys",
+  "title": "Migrate to Neon PostgreSQL",
+  "description": "Verify persistent data across Render container restarts",
   "priority": "high",
   "dueDate": "2026-10-30"
 }
@@ -131,8 +148,8 @@ Content-Type: application/json
   "message": "Task created successfully.",
   "data": {
     "id": 1,
-    "title": "Configure Render persistent disk",
-    "description": "Mount /var/data and verify database persistence across deploys",
+    "title": "Migrate to Neon PostgreSQL",
+    "description": "Verify persistent data across Render container restarts",
     "completed": false,
     "priority": "high",
     "dueDate": "2026-10-30",
@@ -163,8 +180,8 @@ GET /api/todos?status=pending&priority=high&sortBy=dueDate HTTP/1.1
   "data": [
     {
       "id": 1,
-      "title": "Configure Render persistent disk",
-      "description": "Mount /var/data and verify database persistence across deploys",
+      "title": "Migrate to Neon PostgreSQL",
+      "description": "Verify persistent data across Render container restarts",
       "completed": false,
       "priority": "high",
       "dueDate": "2026-10-30",
@@ -193,8 +210,8 @@ Content-Type: application/json
   "message": "Task updated successfully.",
   "data": {
     "id": 1,
-    "title": "Configure Render persistent disk",
-    "description": "Mount /var/data and verify database persistence across deploys",
+    "title": "Migrate to Neon PostgreSQL",
+    "description": "Verify persistent data across Render container restarts",
     "completed": true,
     "priority": "high",
     "dueDate": "2026-10-30",
@@ -230,10 +247,11 @@ Content-Type: application/json
    - `Content-Security-Policy` restricting script, style, and font origins.
 2. **Body Parser Limits & JSON Guard:** Request bodies are restricted to `100kb` with graceful handling of malformed JSON payloads.
 3. **Mass Assignment Prevention:** The update and creation handlers enforce an explicit property whitelist (`title`, `description`, `completed`, `priority`, `dueDate`). Internal keys such as `id`, `created_at`, or extraneous client properties are discarded.
-4. **SQL Injection Defense:** All SQLite interactions use parameterized prepared statements (`?` placeholders) via `better-sqlite3`. No raw string concatenation is executed against the database.
+4. **SQL Injection Defense:** All database interactions use parameterized queries (`$1, $2` for PostgreSQL, `?` for SQLite). No raw string concatenation is executed against either engine.
 5. **Cross-Site Scripting (XSS) Prevention:** User-supplied task names and descriptions are injected into the DOM exclusively via `textContent` and native DOM element creation.
-6. **Defensive Error Handling:**
-   - Centralized error handlers return clean JSON errors for `/api/*` requests without leaking internal server stack traces to clients.
+6. **Fail-Fast Configuration:** If `DATABASE_URL` is set, the application will not silently fall back to SQLite if PostgreSQL connection fails.
+7. **Defensive Error Handling:**
+   - Centralized error handlers return clean JSON errors for `/api/*` requests without leaking internal database errors or stack traces to clients.
    - Non-numeric or negative task IDs return descriptive `400 Bad Request` responses.
    - Empty update requests are validated and rejected with `400 Bad Request`.
 
@@ -241,15 +259,16 @@ Content-Type: application/json
 
 ## Production Deployment on Render
 
-This application is ready to deploy on **Render** as a Node.js Web Service with a **Persistent Disk**.
+This application is ready to deploy on **Render's Free Web Service** with external **PostgreSQL** storage (such as [Neon](https://neon.tech)).
 
-For complete step-by-step instructions, backup procedures, and troubleshooting, consult **[`DEPLOYMENT.md`](./DEPLOYMENT.md)**.
+For detailed instructions and troubleshooting, see **[`DEPLOYMENT.md`](./DEPLOYMENT.md)**.
 
 ### Quick Start with Render Blueprint:
-1. Push your repository to GitHub.
-2. Log in to the [Render Dashboard](https://dashboard.render.com).
-3. Click **New +** &rarr; **Blueprint** and connect this repository (`shubh201203/TO-DO`).
-4. Render automatically parses `render.yaml`, provisions a 1 GB persistent disk mounted at `/var/data`, sets `DATABASE_PATH=/var/data/todos.db`, and deploys the application.
+1. Push this repository to GitHub.
+2. Create a free PostgreSQL database on [Neon](https://neon.tech) and copy your connection string.
+3. In [Render Dashboard](https://dashboard.render.com), click **New +** &rarr; **Blueprint** and select your repository.
+4. When prompted, enter your Neon connection string for `DATABASE_URL`.
+5. Render deploys your application on the **Free Plan** with full data persistence.
 
 ---
 
@@ -270,7 +289,7 @@ For complete step-by-step instructions, backup procedures, and troubleshooting, 
    ```bash
    npm start
    ```
-   The application will initialize `data/todos.db` automatically and listen on `http://0.0.0.0:3000` (or the port defined by `process.env.PORT`).
+   The application automatically detects that `DATABASE_URL` is not set, initializes local SQLite storage at `data/todos.db`, and listens on `http://0.0.0.0:3000` (or `PORT`).
 
 4. **Access the application:**
    - Primary Task Dashboard (Homepage): `http://localhost:3000/` or `http://localhost:3000/todo`
@@ -281,14 +300,16 @@ For complete step-by-step instructions, backup procedures, and troubleshooting, 
 
 ## Automated Test Suite
 
-The test suite runs with Node.js built-in `node:test` runner and uses an isolated `:memory:` SQLite instance to avoid touching local development data:
+The test suite runs with Node.js built-in `node:test` runner. All tests run completely offline without requiring any live database:
 
 ```bash
 npm test
 ```
 
-### Test Coverage (39 passing automated tests):
-- **Database Unit Tests (8 tests):** Schema creation, CRUD operations, metadata handling, search/filter queries, overdue count calculations, health check query, and unsupported field rejection.
+### Test Coverage (52 passing automated tests):
+- **Database Module Unit Tests (8 tests):** Schema creation, CRUD operations, metadata handling, search/filter queries, overdue count calculations, health check query, and unsupported field rejection on SQLite.
+- **Database Driver Selection & Fail-Fast Tests (3 tests):** Validates default fallback to SQLite when `DATABASE_URL` is unset, PostgreSQL driver selection when `DATABASE_URL` is present, and fail-fast behavior when connection fails.
+- **PostgreSQL Adapter Unit Tests with Mock Pool (8 tests):** Validates schema creation DDL, parameterized query generation, Date formatting (`formatDueDate`), update timestamp triggers, delete reporting, aggregate count queries, and pool health checking.
 - **REST API Integration Tests (11 tests):** Endpoint status codes, body validation, 400 for empty title, 400 for invalid dates/priorities, 400 for malformed JSON, 400 for empty PATCH payload, 400 for non-object bodies, 404 for missing IDs, PATCH updates, and DELETE operations.
 - **Web Hub Route Verification (11 tests):** Confirms `/` and `/todo` serve the To-do app directly, verifies `/q1`, `/emi`, `/hotel`, `/hub`, `/health`, and static asset endpoints return `200 OK`, validates security headers, and verifies clean 404 responses.
 - **Todo Logic & State Verification (5 tests):** Validates sanitization of untrusted payloads, filtering algorithms, completion clearing, overdue date calculation, and ISO date formatting.
@@ -304,7 +325,6 @@ npm audit
 
 ---
 
-## Known Limitations & Architecture Notes
+## License
 
-- **Single Web Instance Constraint:** SQLite relies on filesystem-level locks (POSIX locks). Render Persistent Disks can only be mounted to a single Web Service instance at a time. The application is therefore configured for single-instance deployment (`numInstances: 1`).
-- **Single-Tenant Workspace:** Operates in single-user mode without user authentication. Anyone with the public URL can view or edit tasks. Do not store sensitive or private credentials in task descriptions.
+MIT

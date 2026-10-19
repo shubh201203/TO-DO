@@ -1,48 +1,68 @@
-# Production Deployment Guide: Render with SQLite & Persistent Disk
+# Production Deployment Guide: Render Free Web Service with Persistent PostgreSQL (Neon)
 
-This guide outlines how to deploy the **Full-Stack Task Manager & Web Hub** to **Render** as a Node.js Web Service using an attached **Persistent Disk** to ensure SQLite data persists across server restarts, redeployments, and code updates.
+This guide explains how to deploy the **Full-Stack Task Manager & Web Hub** to **Render's Free Web Service** backed by persistent **PostgreSQL** storage (using [Neon](https://neon.tech), Supabase, or any external PostgreSQL provider).
 
 ---
 
 ## 1. Architecture & Storage Model
 
 ```text
-                               Render Web Service
-                    ┌──────────────────────────────────────┐
-                    │  Node.js + Express 5 Runtime         │
-                    │  PORT: process.env.PORT (e.g., 10000)│
-                    │  HOST: 0.0.0.0                       │
-                    └──────────────────┬───────────────────┘
-                                       │
-                      Mounted Volume   │ Reads & Writes (WAL Mode)
-                      (/var/data)      ▼
-                    ┌──────────────────────────────────────┐
-                    │  Render Persistent Disk (1 GB)       │
-                    │  File: /var/data/todos.db            │
-                    │  - Survives instance reboots         │
-                    │  - Survives container redeployments  │
-                    └──────────────────────────────────────┘
+[ Render Free Web Service ]                           [ External Managed PostgreSQL (Neon) ]
+┌──────────────────────────────────────┐             ┌──────────────────────────────────────────────┐
+│  Node.js + Express 5 Runtime         │   SSL/TLS   │  Serverless PostgreSQL 16+                   │
+│  PORT: process.env.PORT (e.g. 10000) │ ──────────▶ │  DATABASE_URL=postgres://user:pass@host/db   │
+│  Dual Driver: PostgreSQL (pg)        │  (Port 5432)│  - Durable, persistent cloud storage         │
+│  Zero persistent disk required       │             │  - Survives container spin-downs & deploys   │
+└──────────────────────────────────────┘             └──────────────────────────────────────────────┘
 ```
 
+### Why Persistent PostgreSQL instead of SQLite on Render Free?
+- **Render Free Web Services** use an ephemeral container filesystem. Any file written to the local disk (such as `data/todos.db`) is completely erased whenever the container restarts, sleeps after 15 minutes of inactivity, or redeploys with new code.
+- Render Free does **not** support Persistent Disks.
+- By connecting to an external cloud PostgreSQL provider with a free tier (such as [Neon Serverless Postgres](https://neon.tech)), your tasks and metrics persist permanently across all restarts, spin-downs, and deployments at **$0 cost**.
+
+---
+
+## 2. Dual Database Architecture
+
+The application includes an intelligent dual-driver database layer (`db/database.js`):
+
+| Environment | Driver Selected | Data Store | Trigger |
+|---|---|---|---|
+| **Local Development** | SQLite (`better-sqlite3`) | `data/todos.db` (local disk) or `:memory:` | `DATABASE_URL` is **not set** |
+| **Production on Render** | PostgreSQL (`pg`) | Cloud PostgreSQL instance (Neon) | `DATABASE_URL` is **set** |
+
 > [!IMPORTANT]
-> **Why Persistent Disks are Required for SQLite on Render:**  
-> Standard Render Web Service containers use an ephemeral filesystem. Any files written outside a persistent disk mount are wiped whenever the service redeploys or restarts. Attaching a persistent disk to `/var/data` ensures that `todos.db` and its SQLite write-ahead log (`WAL`) files remain durable and intact.
+> **Strict Fail-Fast Guarantee:**
+> When `DATABASE_URL` is set, the application strictly requires PostgreSQL. It will **never** silently fall back to ephemeral SQLite if PostgreSQL credentials fail or the remote database is unreachable. If the connection fails, the server reports the exact error and halts so that configuration issues can be fixed immediately.
 
 ---
 
-## 2. Prerequisites
+## 3. Step-by-Step Neon PostgreSQL Setup (Free Tier)
 
-1. A [GitHub](https://github.com) account with this repository pushed to `main`.
-2. A [Render](https://render.com) account.
-3. Node.js v18+ and npm installed locally for local development and testing.
+### Step 1: Create a Free Neon Account
+1. Visit [neon.tech](https://neon.tech) and sign up (GitHub sign-in is supported).
+2. Click **Create Project**.
+3. Choose a project name (e.g., `todo-database`) and select a region close to your Render deployment region (e.g., `US East (N. Virginia)` or `EU (Frankfurt)`).
+4. Click **Create Project**.
+
+### Step 2: Retrieve your Connection String
+1. Once your project is created, the Neon Dashboard displays your **Connection String**.
+2. Ensure **Connection Details** is set to **Pooled connection** or **Direct connection** (both work with Node `pg`; pooled connection is recommended for serverless deployments).
+3. The connection string looks like:
+   ```text
+   postgres://username:password@ep-cool-frost-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
+   ```
+4. Copy this connection string. **Never commit this string or your password into Git.**
 
 ---
 
-## 3. Deployment Method A: Blueprint Deployment (Recommended)
+## 4. Deploying to Render
 
-This repository includes a `render.yaml` blueprint that automates service creation, disk provisioning, environment variables, and health checks.
+### Deployment Method A: Blueprint Deployment (Recommended)
 
-### Steps:
+This repository includes an updated `render.yaml` Blueprint configured specifically for the Render Free Web Service tier.
+
 1. Ensure your latest changes are pushed to GitHub:
    ```bash
    git push origin main
@@ -50,70 +70,61 @@ This repository includes a `render.yaml` blueprint that automates service creati
 2. Log in to the [Render Dashboard](https://dashboard.render.com).
 3. Click **New +** in the top navigation bar and select **Blueprint**.
 4. Connect your GitHub repository (`shubh201203/TO-DO`).
-5. Render will detect `render.yaml` and display the resources to be created:
+5. Render will detect `render.yaml` with the following configuration:
    - **Service Name:** `todo-task-manager`
    - **Runtime:** `Node`
+   - **Plan:** `Free`
    - **Build Command:** `npm install`
    - **Start Command:** `npm start`
    - **Health Check Path:** `/health`
-   - **Persistent Disk:** `todo-data` mounted at `/var/data` (1 GB)
-   - **Environment Variables:** `DATABASE_PATH=/var/data/todos.db`, `NODE_ENV=production`
-6. Click **Apply**. Render will provision the disk, build the dependencies, and start the application.
+   - **Environment Variables:**
+     - `NODE_ENV`: `production`
+     - `DATABASE_URL`: `sync: false` (prompts you to enter your Neon connection string)
+6. Paste your Neon connection string into the `DATABASE_URL` prompt.
+7. Click **Apply**. Render will deploy the application and establish the PostgreSQL connection.
 
 ---
 
-## 4. Deployment Method B: Manual Dashboard Configuration
+### Deployment Method B: Manual Dashboard Configuration
 
-If you prefer configuring the Web Service manually via the Render UI:
+If configuring manually via the Render UI:
 
-### Step 1: Create Web Service
 1. In the Render Dashboard, click **New +** &rarr; **Web Service**.
-2. Select your repository (`shubh201203/TO-DO`).
-3. Set the following configuration options:
+2. Connect your GitHub repository (`shubh201203/TO-DO`).
+3. Set the configuration:
    - **Name:** `todo-task-manager`
-   - **Region:** Choose the region closest to your users (e.g., Oregon, Frankfurt, Singapore).
+   - **Region:** Same region as your Neon database (or closest to it).
    - **Branch:** `main`
-   - **Root Directory:** Leave blank (root).
    - **Runtime:** `Node`
+   - **Plan:** `Free`
    - **Build Command:** `npm install`
    - **Start Command:** `npm start`
-   - **Instance Type:** Select a plan that supports Persistent Disks (Starter plan or higher).
-
-### Step 2: Attach Persistent Disk
-1. Scroll down to the **Disks** section (or click **Advanced** &rarr; **Add Disk**).
-2. Click **Add Disk** and configure:
-   - **Name:** `todo-data`
-   - **Mount Path:** `/var/data`
-   - **Size:** `1 GB` (sufficient for hundreds of thousands of tasks).
-
-### Step 3: Configure Environment Variables
-In the **Environment Variables** section, add:
-| Key | Value | Description |
-|---|---|---|
-| `NODE_ENV` | `production` | Enables production optimizations and disables debug traces. |
-| `DATABASE_PATH` | `/var/data/todos.db` | Directs SQLite to store data on the persistent volume. |
-
-*(Note: Render automatically supplies `PORT`, which our server reads dynamically).*
-
-### Step 4: Configure Health Check Path
-1. Under **Advanced Settings**, locate **Health Check Path**.
-2. Enter: `/health`.
-3. Click **Create Web Service**.
+4. Expand **Advanced** and configure:
+   - **Health Check Path:** `/health`
+5. Under **Environment Variables**, add:
+   | Key | Value | Notes |
+   |---|---|---|
+   | `NODE_ENV` | `production` | Enables production optimizations. |
+   | `DATABASE_URL` | `postgres://user:pass@ep-xyz.neon.tech/neondb?sslmode=require` | Your Neon connection string. |
+   | `DATABASE_SSL` | `true` *(Optional, defaults to true)* | Forces TLS connection to external database. |
+6. Click **Create Web Service**.
 
 ---
 
 ## 5. Verification & Health Monitoring
 
 ### 1. Verify Deployment Logs
-Once deployment completes, open the **Logs** tab in Render:
-- Confirm dependencies installed cleanly: `better-sqlite3` compiled with prebuilt binaries.
-- Confirm the server startup message:
+Open the **Logs** tab in Render:
+- Confirm dependencies installed: `pg` and `better-sqlite3`.
+- Confirm startup messages:
   ```text
+  Connecting to PostgreSQL database...
+  PostgreSQL database connected and schema initialized.
   Task Manager & Web Hub listening at http://0.0.0.0:10000
   ```
 
 ### 2. Verify Health Check Endpoint
-Send an HTTP GET request to your service's `/health` endpoint:
+Query your deployed service:
 ```bash
 curl https://your-service-name.onrender.com/health
 ```
@@ -121,81 +132,47 @@ curl https://your-service-name.onrender.com/health
 ```json
 {
   "status": "ok",
-  "uptime": 124,
-  "timestamp": "2026-10-19T05:30:00.000Z"
+  "uptime": 45,
+  "timestamp": "2026-10-19T06:00:00.000Z"
 }
 ```
 
-### 3. Verify Application Hub & Tasks
-- Open `https://your-service-name.onrender.com/` to verify the Navigation Hub.
-- Open `https://your-service-name.onrender.com/todo` to verify the Task Manager.
-- Verify utility pages: `/q1`, `/emi`, `/hotel`.
-
----
-
-## 6. Verifying Data Persistence
-
-To confirm your data survives redeployments and restarts:
-
-1. Open `/todo` on your live Render URL.
+### 3. Verify PostgreSQL Data Persistence
+1. Open `https://your-service-name.onrender.com/` in your browser.
 2. Create a test task:
-   - **Title:** `Production Persistence Test`
+   - **Title:** `Neon PostgreSQL Persistence Check`
    - **Priority:** `High`
-   - **Due Date:** Tomorrow's date
-3. In the Render Dashboard for your service, navigate to **Manual Deploy** &rarr; **Clear build cache & deploy** (or **Restart Service**).
-4. Wait for the service to come back online.
-5. Refresh `/todo`:
-   - Confirm `Production Persistence Test` remains in the task list.
-   - Confirm the dashboard summary counts match the persisted state.
+   - **Due Date:** A future date
+3. In Render Dashboard, click **Manual Deploy** &rarr; **Deploy latest commit** (or restart the service).
+4. Wait for Render to redeploy and restart the container.
+5. Refresh your browser:
+   - The task `Neon PostgreSQL Persistence Check` will still be present and intact.
+   - Live KPI metrics and task status remain consistent.
 6. Delete the test task after verification.
 
 ---
 
-## 7. SQLite Backup & Restoration Procedures
+## 6. Local Development vs. Production
 
-Because SQLite stores all data in a single file on the persistent disk, backups are fast and reliable.
+No database setup or credentials are required for local development or testing:
 
-### Creating a Backup via Render Shell
-1. In the Render Dashboard, navigate to your Web Service and open the **Shell** tab.
-2. Create a timestamped backup inside the persistent directory:
-   ```bash
-   sqlite3 /var/data/todos.db ".backup '/var/data/todos_backup_$(date +%F).db'"
-   ```
-3. Alternatively, copy the database using standard file commands while SQLite is in WAL mode:
-   ```bash
-   cp /var/data/todos.db /var/data/todos_backup.db
-   ```
-
-### Restoring from Backup
-If you ever need to restore the database from a backup file:
-1. In the Render Shell:
-   ```bash
-   # Stop server writes or restart service immediately after restore
-   cp /var/data/todos_backup.db /var/data/todos.db
-   ```
-2. Restart the service from the Render Dashboard to ensure any active database connections re-read the file.
+- **Local Machine:**
+  Simply run `npm start`. Since `DATABASE_URL` is omitted, the app instantly boots with SQLite (`data/todos.db`).
+- **Running Tests:**
+  `npm test` executes all 52 automated tests in milliseconds using isolated in-memory SQLite and a mock PostgreSQL adapter. No live network or database credentials are required.
+- **Testing PostgreSQL Locally (Optional):**
+  If you have a local PostgreSQL container or wish to connect to Neon locally:
+  ```bash
+  DATABASE_URL="postgres://user:pass@localhost:5432/todos_dev" npm start
+  ```
 
 ---
 
-## 8. Operational Characteristics & Architecture Limitations
-
-### A. Single Instance (Horizontal Scaling Constraint)
-- SQLite relies on filesystem-level locks (POSIX locks) for concurrency control.
-- Because Render persistent disks can only be mounted to a single Web Service instance at a time, this application must run as a **single instance** (`numInstances: 1`).
-- Attempting to scale horizontally across multiple instances would result in database corruption or locked database errors.
-
-### B. Single-User / Public Workspace Model
-- This application currently operates without user authentication or tenant isolation.
-- Anyone with the public URL can create, complete, edit, or delete tasks.
-- **Security Recommendation:** Do not store proprietary or sensitive personal information in task descriptions. If required for private use, restrict access using HTTP Basic Authentication or keep the service private.
-
----
-
-## 9. Troubleshooting Common Issues
+## 7. Troubleshooting Common Issues
 
 | Issue | Cause | Solution |
 |---|---|---|
-| **Health Check Failed (503)** | SQLite cannot open `/var/data/todos.db` due to missing directory or permissions. | Verify the disk mount path in Render settings is `/var/data` and `DATABASE_PATH` is `/var/data/todos.db`. The application automatically calls `fs.mkdirSync(dir, { recursive: true })` on startup. |
-| **Data Resets on Restart** | The persistent disk is not attached, or `DATABASE_PATH` points to the default local path (`data/todos.db`) on the ephemeral container disk. | Confirm in the Render Dashboard under **Disks** that `todo-data` is mounted to `/var/data`, and `DATABASE_PATH=/var/data/todos.db` is set under Environment Variables. |
-| **`better-sqlite3` Build Error** | Missing build tools or incompatibility during `npm install`. | The project uses `better-sqlite3` v13+, which ships with precompiled binaries for Linux x64 (glibc). Standard Node 18/20/22/24 environments on Render install cleanly without needing `node-gyp`. |
-| **API Returns 400 on Updates** | Client passed empty JSON body or protected fields (`id`, `created_at`). | Ensure PATCH payloads include at least one valid editable field (`title`, `description`, `completed`, `priority`, `dueDate`). |
+| **Build Succeeded but App Crashes on Start** | `DATABASE_URL` is missing, misformatted, or unreachable. | Check Render Logs. If `DATABASE_URL` is set, the app refuses to fall back to SQLite to prevent data loss. Verify the connection string in Render Environment Variables. |
+| **Self-signed Certificate / SSL Error** | PostgreSQL provider requires SSL. | The app defaults to SSL enabled (`rejectUnauthorized: false`). If your provider requires explicit plain TCP (rare), set `DATABASE_SSL=false`. |
+| **Render Free Web Service Sleep/Spin-Down** | Free tier services sleep after 15 minutes of no HTTP traffic. | When a request arrives, Render wakes the service (cold start takes 20-40s). Because data is stored in Neon, **no data is ever lost during spin-down**. |
+| **Due Date Shifting by One Day** | Timezone parsing discrepancy between SQL `DATE` and local browser time. | The PostgreSQL adapter formats `due_date` strictly as `YYYY-MM-DD` strings without timezone conversion, preventing calendar date shifts. |
